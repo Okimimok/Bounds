@@ -1,14 +1,16 @@
-from gurobipy import *
+from gurobipy import * 
 import numpy as np
 
-# Similar to PIP, but multi-counts coverage when computing penalties.
-#	Variant of code allowing for quick evaluation (and gradient information)
-#	from a single penalty.
+# Perfect information problem with one-step look-ahead penalty. Involves
+#	 a big-M constraint. Don't use for problems involving more than 2 or 3 
+#	 ambulances. Warm start not implemented yet (and probably won't be).
 
-def solve(svcArea, arrStream, omega, penalty, flag=False, grad=False, soln=False):
+def solve(svcArea, arrStream, omega, penalty, flag=False, grad=False):
 	# Unpacking relevant problem instance parameters
 	bases = svcArea.bases
+	nodes = svcArea.nodes
 	B	  = svcArea.getB()
+	P     = arrStream.getP()
 	RP	  = arrStream.getRP()
 	T	  = omega.T
 	calls = omega.getCalls()
@@ -26,18 +28,31 @@ def solve(svcArea, arrStream, omega, penalty, flag=False, grad=False, soln=False
 	m = Model()
 
 	###################### DECISION VARIABLES
-	# Respond to call c with ambulance from base i, and redeploy to j?
+	# When call c arrives, can an ambulance respond?
+	v = {}
+	for c in calls:
+		loc  = calls[c]['loc']
+		v[c] = m.addVar(lb=0, ub=1, obj= -gamma[c], vtype=GRB.BINARY)
+
+	# At time t, can system respond to call arriving at node i?
+	w = {}
+	for t in xrange(1, T+1):
+		w[t] = {}
+		for i in nodes:
+			w[t][i] = m.addVar(lb=0, ub=1, obj=gamma[t]*P[t][i],\
+									   vtype=GRB.BINARY)
+
+	# Respond to call c with ambulance from base j, and redeploy to k?
 	x = {}	
 	for c in calls:
 		x[c] = {}
-		for j in sorted(B[calls[c]['loc']]):
+		for j in B[calls[c]['loc']]:
 			x[c][j] = {}
 			for k in bases:
 				x[c][j][k] = m.addVar(lb=0, ub=1, obj=1, vtype=GRB.BINARY)
 
 	# At time t, the number of idle ambulances at base j
 	y = {}
-	
 	if gamma.ndim == 1:
 		for t in xrange(T+1):
 			y[t] = {}
@@ -68,16 +83,16 @@ def solve(svcArea, arrStream, omega, penalty, flag=False, grad=False, soln=False
 
 	######################### CONSTRAINTS
 	# At most one response to a call
-	for t in calls:
-		loc = calls[t]['loc']
-		m.addConstr(quicksum(quicksum(x[t][j][k] for j in B[loc])\
+	for c in calls:
+		loc = calls[c]['loc']
+		m.addConstr(quicksum(quicksum(x[c][j][k] for j in B[loc])\
 												 for k in bases) <= 1)
 
 	# No dispatch unless ambulance idle
-	for t in calls:
-		loc = calls[t]['loc']
+	for c in calls:
+		loc = calls[c]['loc']
 		for j in B[loc]:
-		   m.addConstr(quicksum(x[t][j][k] for k in bases) <= y[t][j])
+		   m.addConstr(quicksum(x[c][j][k] for k in bases) <= y[c][j])
 
 	# Flow balance for idle ambulances
 	for t in xrange(T+1):
@@ -86,7 +101,7 @@ def solve(svcArea, arrStream, omega, penalty, flag=False, grad=False, soln=False
 			if (t-1) in calls:
 				loc = calls[t-1]['loc']
 				for j in bases:
-					# Could base i have dispatched an ambulance to the call?
+					# Could base j have dispatched an ambulance to the call?
 					if j in B[loc]:
 						m.addConstr(y[t][j] == y[t-1][j] \
 							+ quicksum([x[s][k][j] for (s,k) in Q[t][j]])\
@@ -95,22 +110,32 @@ def solve(svcArea, arrStream, omega, penalty, flag=False, grad=False, soln=False
 						m.addConstr(y[t][j] == y[t-1][j] \
 							+ quicksum([x[s][k][j] for (s,k) in Q[t][j]]))	   
 			else:
-				for j in bases: 
+				for j in bases:
 					m.addConstr(y[t][j] == y[t-1][j] \
 						+ quicksum([x[s][k][j] for (s,k) in Q[t][j]]))
 		else:
 			for j in bases:
 				m.addConstr(y[t][j] == bases[j]['alloc'])
-	
-	
-				
-	######################### SOLUTION	   
+
+	# Determining values for w-variables
+	for t in xrange(1, T+1):
+		for i in nodes:
+			m.addConstr(w[t][i] <= quicksum(y[t][j] for j in B[i]))
+
+	# Constraints for v-variables
+	for c in calls:
+		loc = calls[c]['loc']
+		m.addConstr(A*v[c] >= quicksum(y[c][j] for j in B[loc]))
+
+ 
 	# Optimal solution, determining response sequence
+	m.setParam('MIPGap', 0.01)
+	m.setParam('TimeLimit', 600)
 	m.optimize()
-	obj = m.objVal
-		
-	# Gradient of objective w.r.t. Lagrange multipliers
+	obj		  = m.objVal
+
 	if grad:
+		# Gradient of objective w.r.t. Lagrange multipliers
 		if gamma.ndim == 1:
 			gradSample = np.zeros(T+1)
 			for t in xrange(T+1):
@@ -125,31 +150,6 @@ def solve(svcArea, arrStream, omega, penalty, flag=False, grad=False, soln=False
 					gradSample[t][j] = y[t][j].x*RP[t][j]
 					if t in calls and j in B[calls[t]['loc']]:
 						gradSample[t][j] -= y[t][j].x
-		if soln:
-			return obj, gradSample, m.runTime, solution(x,y)
-		else:
-			return obj, gradSample, m.runTime
+		return obj, gradSample, m.runTime
 	else:
-		if soln:
-			return obj, m.runTime, solution(x, y)
-		else:
-			return obj, m.runTime
-
-
-def solution(x, y):
-	# Given a feasible solution (x, y) to the integer program, returns a dictionary
-	#	containing both.
-	feas = {'x': {}, 'y' : {}}
-	for t in y:
-		feas['y'][t] = {}
-		if t in x:
-			feas['x'][t] = {}
-			for j in x[t]:
-				feas['x'][t][j] = {}
-				for k in x[t][j]:
-					feas['x'][t][j][k] = x[t][j][k].x
-
-		for j in y[t]:
-			feas['y'][t][j] = y[t][j].x
-	
-	return feas
+		return obj, m.runTime
