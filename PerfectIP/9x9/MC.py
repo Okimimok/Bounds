@@ -28,15 +28,18 @@ arrStream.updateP(0.20)
 N	  = 100
 piobj = np.zeros(N)
 
-
 seed(randomSeed)
 for k in xrange(N):
 	if (k+1)% 10 == 0:
 		print 'Iteration %i' % (k+1)
-
 	omega  = SamplePath(svcArea, arrStream, svcDist)
 	
-	# Penalized IP w/ valid inequalities and warm start
-	piobj[k], _ = IP.solve(svcArea, arrStream, omega)
-	
+	# Solver settings
+	settings = {'OutputFlag' : 0}	
+
+	# Perfect Information  IP 
+	p = IP.ModelInstance(svcArea, arrStream, omega)
+	p.solve(settings)
+	piobj[k] = p.getObjective()	
+
 print 'PI Relaxation : %.3f +/- %.3f' % confInt(piobj)
