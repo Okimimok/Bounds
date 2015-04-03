@@ -35,22 +35,6 @@ def discreteDict(A):
     
     return key
     
-def generateCalls(nodes, svcTime, P):
-    # Given a graph (represented by a list of nodes), a service time dist.
-    #   (stored as a dict), an arrival probability matrix P, generates a
-    #   sample path of arrivals (times, locations, service reqt's)
-    calls = {}
-    
-    for t in xrange(len(P)):
-        # Call pmf at time t
-        callLoc = discreteN(P[t])
-        
-        if callLoc != 'null':
-            calls[t]        = {}
-            calls[t]['loc'] = callLoc
-            calls[t]['svc'] = discreteDict(svcTime)
-    return calls
-
 def confInt(A, level=0.95):
     # Given an array A of values, computes a 100*(1-level)% CI of the
     #   form "mean +/- hwidth"

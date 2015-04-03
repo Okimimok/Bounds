@@ -4,6 +4,7 @@ from random import seed
 from ...Methods.graph import readNetworkFile
 from ...Methods.gradientSearch import solvePIPs, lineSearch
 from ...Classes.StationaryArrivalStream import StationaryArrivalStream
+from ...Classes.ServiceDistribution import ServiceDistribution
 from ...Classes.PenaltyMultipliers import PenaltyMultipliers
 from ...MultipleIP import PIP2
 
@@ -12,9 +13,9 @@ networkFile  = "9x9//four.txt"
 #################################################
 # Basic inputs
 T		= 1440
-svcDist = {}
-for i in xrange(12, 25):
-	svcDist[i] = 1.0/13
+vals    = np.arange(12, 25, dtype = 'int64')
+probs   = np.ones(13)/13
+svcDist = ServiceDistribution(vals, probs)
 
 ##################################################
 # Network, arrival patterns
@@ -31,8 +32,8 @@ penalty.setStepSizes([0.5, 1.0, 2.0, 4.0])
 ##################################################
 # Estimate objective value and gradient at current point
 gradN	  = 100 
-lineN	  = 50
-iters	  = 1 
+lineN	  = 100 
+iters	  = 5 
 randSeed  = 33768
 settings = {'OutputFlag' : 0}
 
@@ -65,7 +66,6 @@ for i in xrange(iters):
 			bestStep = j
 			bestVal  = vals[count]
 		count += 1
-		
 	print 'Best objective value : %.4f \n' % bestVal	
 		
 	# If step size is zero, take smaller steps. O/w, update gradient.
@@ -73,7 +73,6 @@ for i in xrange(iters):
 		penalty.scaleGamma(0.5)
 	else:
 		penalty.updateGamma(-bestStep*nabla)
-print np.average(obj)
 
 # Upon termination, sample the objective value at the point selected
 print 'Computing final objective value...'	
