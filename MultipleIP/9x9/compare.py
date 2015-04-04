@@ -3,13 +3,14 @@ import time
 from random import seed
 from ...Methods.graph import readNetworkFile
 from ...Methods.sample import confInt
+from ...Methods import makeXLS
 from ...Methods.gradientSearch import solvePIPs, lineSearch
 from ...Classes.StationaryArrivalStream import StationaryArrivalStream
 from ...Classes.ServiceDistribution import ServiceDistribution
 from ...Classes.SamplePath import SamplePath
 from ...Classes.PenaltyMultipliers import PenaltyMultipliers
 from ...Simulation import policies
-from ...Simulation.simulation import simulate as simLB
+from ...Simulation.lowerBound import simulate as simLB
 from ...Simulation.boundingSystem import simulate as simUB
 from ...MultipleIP import PIP2 
 from ...PerfectIP import IP
@@ -17,11 +18,13 @@ from ...PerfectIP import IP
 networkFile = "9x9//four.txt"
 etaFile     = "eta.txt"
 outputFile	= "compare.txt"
+xlsFile     = "compare.xlsx"
 
 import os.path
 basepath = os.path.dirname(__file__)
-etaPath  = os.path.abspath(os.path.join(basepath, etaFile)) 
-outPath  = os.path.abspath(os.path.join(basepath, outputFile))
+etaPath  = os.path.join(basepath, etaFile) 
+outPath  = os.path.join(basepath, outputFile)
+xlsPath  = os.path.join(basepath, xlsFile)
 
 #####################################################
 # Basic inputs
@@ -63,23 +66,34 @@ for m in xrange(M):
 #####################################################
 # System utilizations tested (for comparing bounds)
 #utils	= [0.04, 0.08, 0.12, 0.16, 0.20, 0.24, 0.28, 0.32]
-utils = [0.15]
+utils = [0.12, 0.15]
 
 #####################################################
 # Estimate objective value and gradient at current point
 # seed1 used for calibrating penalty multipliers
 # seed2 used for comparing bounds 
-simN	 = 100 
-gradN	 = 100
-lineN	 = 100
-iters	 = 5
+#simN	 = 100 
+#gradN	 = 100
+#lineN	 = 100
+simN     = 75
+gradN    = 75
+lineN    = 75
+iters	 = 2
 seed1	 = 33768
 seed2	 = 12345
-ub		 = np.zeros((len(utils), simN))
-pinfo    = np.zeros((len(utils), simN))
-maxwell  = np.zeros((len(utils), simN))
-nearEfEm = np.zeros((len(utils), simN))
 settings = {'OutputFlag' : 0}
+
+# Objective values
+ubObj    = np.zeros((len(utils), simN))
+piObj    = np.zeros((len(utils), simN))
+mxObj    = np.zeros((len(utils), simN))
+lbObj    = np.zeros((len(utils), simN))
+
+# Utilizations
+ubUtil   = np.zeros((len(utils), simN))
+piUtil   = np.zeros((len(utils), simN))
+mxUtil   = np.zeros((len(utils), simN))
+lbUtil   = np.zeros((len(utils), simN))
 
 start = time.clock()
 for h in xrange(len(utils)):
@@ -94,25 +108,25 @@ for h in xrange(len(utils)):
 		gamma = penalty.getGamma()
 		seed(seed1)
 		obj, nabla = solvePIPs(svcArea, arrStream, svcDist, gamma, PIP2,\
-									 settings, gradN, freq=10)
+									 settings, gradN, freq=20)
 		penalty.setNabla(nabla)
 
 		print 'Line Search...'
 		seed(seed1)															
 		vals = lineSearch(svcArea, arrStream, svcDist, penalty, PIP2,\
-									 settings, lineN, freq=5) 
+									 settings, lineN, freq=20) 
 		bestStep = 0
 		bestVal  = np.mean(obj[:lineN])
 		count	 = 0
-	
-		print 'Step Size 0, Mean Obj. %.4f' % bestVal
+			
+		#print 'Step Size 0, Mean Obj. %.4f' % bestVal
 		for j in penalty.getStepSizes():
-			print 'Step Size %.3f, Mean Obj. %.4f' % (j, vals[count])
+			#print 'Step Size %.3f, Mean Obj. %.4f' % (j, vals[count])
 			if vals[count] < bestVal:
 				bestStep = j
 				bestVal  = vals[count]
 			count += 1
-		
+
 		# If step size is zero, take smaller steps. O/w, update gradient.
 		if bestStep == 0:
 			penalty.scaleGamma(0.5)
@@ -123,35 +137,56 @@ for h in xrange(len(utils)):
 	print 'Debiasing...'
 	seed(seed2)
 	for i in xrange(simN):
-		omega		   = SamplePath(svcArea, arrStream, svcDist)
-		maxwell[h][i]  = simUB(svcDists, omega)
-		nearEfEm[h][i] = simLB(svcArea, omega, policies.nearestEffEmpty)
+		if (i+1)% 20 == 0:
+			print 'Iteration %i' % (i+1)
 
+		omega = SamplePath(svcArea, arrStream, svcDist)
+
+		# Matt Maxwell's upper bound
+		mxStats      = simUB(svcDists, omega)
+		mxObj[h][i]  = mxStats['obj']
+		mxUtil[h][i] = mxStats['util']
+
+		# Simulated lower bound
+		lbStats      = simLB(svcArea, omega, policies.nearestEffEmpty)
+		lbObj[h][i]  = lbStats['obj']
+		lbUtil[h][i] = lbStats['util']
+
+		# Perfect information upper bound
 		m1 = PIP2.ModelInstance(svcArea, arrStream, omega)
 		m1.updateObjective(gamma)
 		m1.solve(settings)
-		ub[h][i] = m1.getModel().objVal	
+		ubObj[h][i]  = m1.getObjective()
+		ubUtil[h][i] = m1.estimateUtilization()	
 
+		# Penalized upper bound
 		m2 = IP.ModelInstance(svcArea, arrStream, omega)
 		m2.solve(settings)
-		pinfo[h][i] = m2.getModel().objVal	
+		piObj[h][i]  = m2.getObjective()	
+		piUtil[h][i] = m2.estimateUtilization()
 						 
-finish = time.clock() 
-print 'Search took %.4f seconds' % (finish - start)
-
-for h in xrange(len(utils)):
 	print 'Arrival Probability = %.3f' % utils[h]
-	print 'Perfect Information : %.3f +/- %.3f'   % confInt(pinfo[h])
-	print 'Upper Bound         : %.3f +/- %.3f'   % confInt(ub[h])
-	print 'Maxwell Bound       : %.3f +/- %.3f'   % confInt(maxwell[h])
-	print 'Nearest Eff. Empty  : %.3f +/- %.3f\n' % confInt(nearEfEm[h])
+	print 'Lower Bound         : %.3f +/- %.3f'   % confInt(lbObj[h])
+	print 'Perfect Information : %.3f +/- %.3f'   % confInt(piObj[h])
+	print 'Penalized Bound     : %.3f +/- %.3f'   % confInt(ubObj[h])
+	print 'Maxwell Bound       : %.3f +/- %.3f\n' % confInt(mxObj[h])
+
+finish   = time.clock() 
+print 'Search took %.4f seconds' % (finish - start)
 
 # Writing results to file
 with open(outPath, 'w') as f:
-	f.write('%i\n' % len(utils))
+	f.write('%i 4\n' % len(utils))
+	f.write('LowerBd PerfectInfo PenaltyBd MaxwellBd\n')
 	for h in xrange(len(utils)):
 		f.write('%.3f\n' % utils[h])
-		f.write('%.3f %.3f\n' % confInt(pinfo[h]))
-		f.write('%.3f %.3f\n' % confInt(ub[h]))
-		f.write('%.3f %.3f\n' % confInt(maxwell[h]))
-		f.write('%.3f %.3f\n' % confInt(nearEfEm[h]))
+		temp1 = confInt(lbObj[h])
+		temp2 = confInt(piObj[h])
+		temp3 = confInt(ubObj[h])
+		temp4 = confInt(mxObj[h])
+		f.write('%.3f %.3f %.3f\n' % (temp1[0], temp1[1], np.average(lbUtil[h])))
+		f.write('%.3f %.3f %.3f\n' % (temp2[0], temp2[1], np.average(piUtil[h])))
+		f.write('%.3f %.3f %.3f\n' % (temp3[0], temp3[1], np.average(ubUtil[h])))
+		f.write('%.3f %.3f %.3f\n' % (temp4[0], temp4[1], np.average(mxUtil[h])))
+
+makeXLS.build(outPath, xlsPath)

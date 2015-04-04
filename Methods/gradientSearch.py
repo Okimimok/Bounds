@@ -29,7 +29,6 @@ def solvePIPs(svcArea, arrStream, svcDist, gamma, IPmodel, settings, N, freq = 1
 		nabla += prob.estimateGradient()/N													
 	   
 	return obj, nabla
-   
 
 def lineSearch(svcArea, arrStream, svcDist, penalty, IPmodel, settings, N, freq=1):
 	# Given an incumbent solution and gradient estimate at that point,

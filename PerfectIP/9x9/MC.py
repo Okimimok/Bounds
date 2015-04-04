@@ -3,6 +3,7 @@ from random import seed
 from ...Methods.graph import readNetworkFile
 from ...Methods.sample import confInt
 from ...Classes.StationaryArrivalStream import StationaryArrivalStream
+from ...Classes.ServiceDistribution import ServiceDistribution
 from ...Classes.PenaltyMultipliers import PenaltyMultipliers
 from ...Classes.SamplePath import SamplePath
 from ...PerfectIP import IP
@@ -13,9 +14,9 @@ randomSeed	= 33768
 #################################################
 # Basic inputs
 T		= 1440
-svcDist = {}
-for i in xrange(12, 25):
-	svcDist[i] = 1.0/13
+vals    = np.arange(12, 25, dtype = 'int64')
+probs   = np.ones(13)/13
+svcDist = ServiceDistribution(vals, probs)
 
 ##################################################
 # Network, arrival patterns
@@ -25,8 +26,9 @@ arrStream.updateP(0.20)
 
 ##################################################
 # Generating sample paths
-N	  = 100
-piobj = np.zeros(N)
+N	   = 3
+piObj  = np.zeros(N)
+piUtil = np.zeros(N)
 
 seed(randomSeed)
 for k in xrange(N):
@@ -40,6 +42,8 @@ for k in xrange(N):
 	# Perfect Information  IP 
 	p = IP.ModelInstance(svcArea, arrStream, omega)
 	p.solve(settings)
-	piobj[k] = p.getObjective()	
+	piObj[k]  = p.getObjective()	
+	piUtil[k] = p.estimateUtilization()	
 
-print 'PI Relaxation : %.3f +/- %.3f' % confInt(piobj)
+print 'Objective : %.3f +/- %.3f' % confInt(piObj)
+print 'Utilization : %.3f +/- %.3f' % confInt(piUtil)

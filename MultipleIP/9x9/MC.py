@@ -3,6 +3,7 @@ from random import seed
 from ...Methods.graph import readNetworkFile
 from ...Methods.sample import confInt
 from ...Classes.StationaryArrivalStream import StationaryArrivalStream
+from ...Classes.ServiceDistribution import ServiceDistribution
 from ...Classes.PenaltyMultipliers import PenaltyMultipliers
 from ...Classes.SamplePath import SamplePath
 from ...MultipleIP import PIP2
@@ -10,12 +11,12 @@ from ...MultipleIP import PIP2
 networkFile = "9x9//four.txt"
 randomSeed	= 33768
 
-#################################################
+#####################################################
 # Basic inputs
 T		= 1440
-svcDist = {}
-for i in xrange(12, 25):
-	svcDist[i] = 1.0/13
+vals    = np.arange(12, 25, dtype = 'int64')
+probs   = np.ones(13)/13
+svcDist = ServiceDistribution(vals, probs)
 
 ##################################################
 # Network, arrival patterns
@@ -30,8 +31,9 @@ penalty = PenaltyMultipliers(gamma)
 
 ##################################################
 # Generating sample paths
-N	  = 25 
-piobj = np.zeros(N)
+N	   = 3 
+ubObj  = np.zeros(N)
+ubUtil = np.zeros(N)
 
 seed(randomSeed)
 for k in xrange(N):
@@ -47,6 +49,8 @@ for k in xrange(N):
 	p = PIP2.ModelInstance(svcArea, arrStream, omega)
 	p.updateObjective(gamma)
 	p.solve(settings)
-	piobj[k] = p.getModel().objVal	
+	ubObj[k]  = p.getObjective()
+	ubUtil[k] = p.estimateUtilization()	
 
-print 'PI Relaxation : %.3f +/- %.3f' % confInt(piobj)
+print 'Objective   : %.3f +/- %.3f' % confInt(ubObj)
+print 'Utilization : %.3f +/- %.3f' % confInt(ubUtil)

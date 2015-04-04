@@ -14,9 +14,13 @@ def simulate(svcDists, omega, debug = False):
 	# Initial simulation state
 	simState = {}
 	simState['ambs']  = A
-	simState['obj']   = 0
 	simState['t']	  = 0
 	simState['debug'] = debug
+
+	simStats = {}
+	simStats['obj']  = 0
+	simStats['busy'] = 0
+	simStats['util'] = 0
 	c = 0
 	
 	# Initialize FEL w/ first event (first arrival)
@@ -24,17 +28,21 @@ def simulate(svcDists, omega, debug = False):
 	#	call arrivals, which cannot occur after T.
 	# Arrivals have priority 1. This allows service to complete 
 	#	before determining feasible dispatches
+	# The end event has priority 2, so events occurring at time T
+	# 	can clear from the FEL first. 
 	T	= omega.T
 	fel = FutureEventsList()
-	fel.addEvent(T+1, 'end')
+	fel.addEvent(T, 'end', priority=2)
 	if len(calls) > 0:
 		fel.addEvent(times[c], 'arrival', rnds[c], 1)
 		
-	while simState['t'] < T + 1:
-		# Find next event, advance clock
-		nextEvent	  = fel.findNextEvent()
-		simState['t'] = nextEvent[0]
-		eventType	  = nextEvent[1]
+	while simState['t'] < T + 1 and fel.eventCount() > 0:
+		# Find next event, update total busy time, advance clock
+		nextEvent	      = fel.findNextEvent()
+		delta             = nextEvent[0] - simState['t']
+		simStats['busy'] += delta*(A - simState['ambs'])
+		simState['t']     = nextEvent[0]
+		eventType	      = nextEvent[1]
 		
 		if simState['debug']:
 			print 'Time %i' % simState['t']
@@ -50,7 +58,7 @@ def simulate(svcDists, omega, debug = False):
 		# Execute relevant event					 
 		if eventType == 'arrival':
 			# Handle the arrival, schedule next one
-			executeArrival(simState, nextEvent[2], fel, svcDists)
+			executeArrival(simState, simStats, nextEvent[2], fel, svcDists)
 			c += 1
 			if c < C:
 				fel.addEvent(times[c], 'arrival', rnds[c], 1)
@@ -62,11 +70,14 @@ def simulate(svcDists, omega, debug = False):
 	
 	if simState['debug']:
 		print 'End of simulation.'
-		print '%i calls served' % simState['obj']
+		print '%i calls served' % simStats['obj']
 	
-	return simState['obj']
+	# Average ambulance utilization
+	simStats['util'] = simStats['busy']/(1.0*T*A)
+
+	return simStats
 			
-def executeArrival(simState, r, fel, svcDists):
+def executeArrival(simState, simStats, r, fel, svcDists):
 	# Call info
 	svc = svcDists[simState['ambs']].sample(r)
 	
@@ -76,14 +87,14 @@ def executeArrival(simState, r, fel, svcDists):
 	# Assign closest ambulance (if applicable), schedule svc. completion
 	if simState['ambs'] > 0:			   
 		simState['ambs'] -= 1			
-		simState['obj']  += 1			
+		simStats['obj']  += 1			
 		finishTime = simState['t'] + svc
-		fel.addEvent(finishTime, 'service', -1)
+		fel.addEvent(finishTime, 'service')
 			
 		if simState['debug']:
 			print 'Call receives response, %i ambulances left' % simState['ambs']
 			print 'To be completed at time %i' % finishTime 
-			print '%i call(s) served' % simState['obj']
+			print '%i call(s) served' % simStats['obj']
 		
 	elif simState['debug']:
 		print 'Call lost'

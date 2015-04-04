@@ -8,6 +8,7 @@ class ModelInstance:
 	def __init__(self, svcArea, arrStream, omega):
 		self.nodes = svcArea.nodes
 		self.bases = svcArea.bases
+		self.dist  = svcArea.getDist()
 		self.B	   = svcArea.getB()
 		self.A	   = sum([self.bases[j]['alloc'] for j in self.bases])
 		self.RP    = arrStream.getRP()
@@ -144,8 +145,32 @@ class ModelInstance:
 		return self.v
 
 	def getObjective(self):
-		# If the model has already been solved, return objective associated with optimal solution
+		# If the model has already been solved, return objective associated
+		# 	 with optimal solution
 		return self.m.objVal
+
+	def estimateUtilization(self):
+		# If the model has already been solved, finds average ambulance utilization
+		#	associated with the optimal solution. (By summing busy times and dividing
+		#	by (# ambs)*(length of horizon)
+		x     = self.v['x']
+		calls = self.calls
+		dist  = self.dist
+		busy  = 0.0
+		for t in calls:
+			loc = calls[t]['loc']
+			svc = calls[t]['svc']
+			for j in sorted(self.B[loc]):
+				for k in self.bases:
+					if x[t][j][k].x > 1e-6:
+						temp = svc + dist[loc][j] + dist[loc][k]
+						if t + temp > self.T:
+							busy += self.T - t
+						else:
+							busy += temp 
+	
+		return busy/(1.0*self.A*self.T)
+		
 
 	def estimateGradient(self):
 		# Given an already solved instance of this IP model, returns the gradient

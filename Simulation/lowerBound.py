@@ -23,33 +23,42 @@ def simulate(svcArea, omega, executeService, debug = False):
 	svcs  = [calls[t]['svc'] for t in times]
 	
 	# Initial simulation state
+	# A = Number of ambulances in the system
 	simState = {}
 	simState['ambs']  = [bases[j]['alloc'] for j in bases]
-	simState['obj']   = 0
 	simState['t']	  = 0
+	simState['A']     = sum(simState['ambs'])
 	simState['debug'] = debug
 	c = 0
+
+	# Simulation output
+	simStats = {}
+	simStats['obj']  = 0
+	simStats['busy'] = 0
 	
 	# Initialize FEL w/ first event (first arrival)
 	# Can let simulation end at T+1, as obj can only increase via 
 	#	call arrivals, which cannot occur after T.
 	# Arrivals have priority 1. This allows redeployments to finish
 	#	before determining feasible dispatches
+	# The end event has priority 2, so events occurring at time T
+	# 	can clear from the FEL first. 
 	T	= omega.T
 	fel = FutureEventsList()
-	fel.addEvent(T+1, 'end')
+	fel.addEvent(T+1, 'end', priority=2)
 	if len(calls) > 0:
 		fel.addEvent(times[c], 'arrival', (locs[c], svcs[c]), 1)
 		
-	while simState['t'] < T + 1:
-		# Find next event, advance clock
-		nextEvent	  = fel.findNextEvent()
-		simState['t'] = nextEvent[0]
-		eventType	  = nextEvent[1]
+	while simState['t'] < T + 1 and fel.eventCount() > 0:
+		# Find next event, update cumulative busy time, advance clock
+		nextEvent	      = fel.findNextEvent()
+		delta             = nextEvent[0] - simState['t']
+		simStats['busy'] += delta*(simState['A'] - sum(simState['ambs']))
+		simState['t']     = nextEvent[0]
+		eventType	      = nextEvent[1]
 		
 		if simState['debug']:
 			print 'Time %i' % simState['t']
-			
 			
 			# Print pending service completions
 			if simState['debug']:
@@ -90,7 +99,7 @@ def simulate(svcArea, omega, executeService, debug = False):
 		# Execute relevant event					 
 		if eventType == 'arrival':
 			# Handle the arrival, schedule next one
-			executeArrival(simState, nextEvent[2], fel, svcArea)
+			executeArrival(simState, simStats, nextEvent[2], fel, svcArea)
 			c += 1
 			if c < C:
 				fel.addEvent(times[c], 'arrival', (locs[c], svcs[c]), 1)
@@ -105,11 +114,13 @@ def simulate(svcArea, omega, executeService, debug = False):
 	
 	if simState['debug']:
 		print 'End of simulation.'
-		print '%i calls served' % simState['obj']
+		print '%i calls served' % simStats['obj']
 	
-	return simState['obj']
+	# Average ambulance utilization
+	simStats['util'] = simStats['busy']/(1.0*T*simState['A'])
+	return simStats
 			
-def executeArrival(simState, callInfo, fel, svcArea):
+def executeArrival(simState, simStats, callInfo, fel, svcArea):
 	nodes = svcArea.getNodes()
 	bases = svcArea.getBases()
 	B	  = svcArea.getB()
@@ -127,13 +138,13 @@ def executeArrival(simState, callInfo, fel, svcArea):
 	for j in B[loc]:
 		if simState['ambs'][j] > 0:			   
 			simState['ambs'][j] -= 1			
-			simState['obj'] += 1			
+			simStats['obj'] += 1			
 			finishTime = simState['t'] + svc + dist[loc][j]
 			fel.addEvent(finishTime, 'service', loc)
 			
 			if simState['debug']:
 				print 'Response from base %s' % str(bases[j]['loc'])
-				print '%i call(s) served' % simState['obj']
+				print '%i call(s) served' % simStats['obj']
 				print 'Arrival time: %i' % (simState['t'] + dist[loc][j])
 				print 'Service time: %i' % svc
 				print 'Call to be completed at time %i' % finishTime
