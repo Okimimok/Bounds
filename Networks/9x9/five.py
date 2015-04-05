@@ -41,4 +41,4 @@ for i in xrange(nX):
         P[i][j] += bvni(mu2, sg2, (i, j))
         
 network(networkFile, nX, nY, nodeDist, Tresp, P, bases, ambLocs)
-heatmap(networkFile, mapFile)
+heatmap(networkFile, mapFile, bases)

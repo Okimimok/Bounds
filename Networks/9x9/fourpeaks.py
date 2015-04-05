@@ -47,4 +47,4 @@ for i in xrange(nX):
         
 
 network(networkFile, nX, nY, nodeDist, Tresp, P, bases, ambLocs)
-heatmap(networkFile, mapFile)
+heatmap(networkFile, mapFile, bases)

@@ -5,14 +5,14 @@ import os.path
 import numpy as np
 
 def bivariateNormalIntegral(mu, sigma, x):
-    term1 = norm.cdf(x[0]+0.5, mu[0], sigma[0])*norm.cdf(x[1]+0.5, mu[1], sigma[1])
-    term2 = norm.cdf(x[0]+0.5, mu[0], sigma[0])*norm.cdf(x[1]-0.5, mu[1], sigma[1])
-    term3 = norm.cdf(x[0]-0.5, mu[0], sigma[0])*norm.cdf(x[1]+0.5, mu[1], sigma[1])
-    term4 = norm.cdf(x[0]-0.5, mu[0], sigma[0])*norm.cdf(x[1]-0.5, mu[1], sigma[1])
-    
-    return term1 - term2 - term3 + term4
+	term1 = norm.cdf(x[0]+0.5, mu[0], sigma[0])*norm.cdf(x[1]+0.5, mu[1], sigma[1])
+	term2 = norm.cdf(x[0]+0.5, mu[0], sigma[0])*norm.cdf(x[1]-0.5, mu[1], sigma[1])
+	term3 = norm.cdf(x[0]-0.5, mu[0], sigma[0])*norm.cdf(x[1]+0.5, mu[1], sigma[1])
+	term4 = norm.cdf(x[0]-0.5, mu[0], sigma[0])*norm.cdf(x[1]-0.5, mu[1], sigma[1])
+	
+	return term1 - term2 - term3 + term4
 
-def heatmap(networkFile, mapFile):
+def heatmap(networkFile, mapFile, bases):
 	basepath  = os.path.dirname(__file__)
 	filepath  = os.path.abspath(os.path.join(basepath, "..//Networks//", networkFile))
 	filepath2 = os.path.abspath(os.path.join(basepath, "..//Networks//", mapFile))
@@ -29,7 +29,19 @@ def heatmap(networkFile, mapFile):
 	
 	rows, cols = np.indices((nX+1, nY+1))
 	ax = plt.subplot(111)
-	plt.pcolormesh(rows, cols, prob, edgecolors = 'None')
+
+	plt.pcolormesh(rows, cols, prob, cmap = 'Greys')
+	ax.xaxis.set_minor_locator(MultipleLocator(1))
+	ax.yaxis.set_minor_locator(MultipleLocator(1))
+
+	ax.xaxis.grid(True,'minor', linewidth = 0.5, linestyle = '-')
+	ax.yaxis.grid(True,'minor', linewidth = 0.5, linestyle = '-')
+	ax.xaxis.grid(True,'major',linewidth=1.5, linestyle = '-')
+	ax.yaxis.grid(True,'major',linewidth=1.5, linestyle = '-')
+
+	for j in bases:
+		ax.plot(j[0]+0.5, j[1]+0.5, marker = 'o', color='g')
+	
 	plt.savefig(filepath2)
 	plt.close('all')
 
