@@ -51,12 +51,10 @@ class ModelInstance:
 
 		# Linking p-variables to y-varaibles
 		for i in svcArea.nodes:
-			self.m.addConstr(p[i] == quicksum(y[i][j]*\
-												svcDist.evalCDF(self.r\
-																- self.t[i][j]\
-																- self.tau[i])\
-												for j in svcArea.bases))
-
+			temp = [int(svcDist.evalCDF(self.r - self.t[i][j] - self.tau[i]))\
+						for j in svcArea.bases]
+			self.m.addConstr(p[i] == quicksum(y[i][j]*temp[j] for j in svcArea.bases))
+												
 		# Dictionary containing model decision variables
 		self.v = {'x' : x, 'y' : y, 'p' : p}
 		

@@ -22,9 +22,9 @@ ambLocs[(7, 1)]  = 1
 ambLocs[(7, 7)]  = 1
 ambLocs[(4, 4)]  = 0
 
-# Response time threshold
-Tresp  = 4
-nBases = len(bases)
+# Response time threshold, distance between nodes
+Tresp    = 4
+nodeDist = 1
 
 # Peaks
 mu1 = (1, 4)
@@ -40,5 +40,5 @@ for i in xrange(nX):
         P[i][j] += bvni(mu1, sg1, (i, j))
         P[i][j] += bvni(mu2, sg2, (i, j))
         
-network(networkFile, nX, nY, nBases, Tresp, P, bases, ambLocs)
+network(networkFile, nX, nY, nodeDist, Tresp, P, bases, ambLocs)
 heatmap(networkFile, mapFile)

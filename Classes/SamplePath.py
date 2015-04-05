@@ -1,5 +1,6 @@
 from ..Methods.sample import discreteN
 from random import random
+from math import ceil
 
 class SamplePath():
 	def __init__(self, svcArea, arrStream, svcDist = None, flagQ = True):
@@ -45,7 +46,7 @@ class SamplePath():
 		
 			for j in B[arr]:
 				for k in svcArea.bases:
-					busy  = svc + dist[arr][j] + dist[arr][k]
+					busy  = int(ceil(svc + dist[arr][j] + dist[arr][k]))
 					ready = c + busy
 					if ready <= self.T:
 						self.__Q[ready][k].append((c, j))

@@ -3,12 +3,13 @@ from ..write import bivariateNormalIntegral as bvni
 from ...Networks.write  import heatmap, network
 
 # Network file location
-networkFile = "fourpeaks.txt"
+networkFile = "9x9//fourpeaks.txt"
+mapFile     = "9x9//fourpeaksheat.pdf"
 
 # Size of grid
-sizeX = 9
-sizeY = 9
-nodes = [(i, j) for i in xrange(sizeX) for j in xrange(sizeY)]
+nX = 9
+nY = 9
+nodes = [(i, j) for i in xrange(nX) for j in xrange(nY)]
 
 # Dispersion of bases within grid
 bases  = [(2, 2), (6, 6), (2, 6), (6, 2)]
@@ -21,8 +22,8 @@ ambLocs[(6, 2)]  = 1
 ambLocs[(6, 6)]  = 1
 
 # Response time threshold
-Tresp  = 4
-nBases = len(bases)
+Tresp    = 4
+nodeDist = 1
 
 # Peaks
 mu1 = (2, 2)
@@ -35,15 +36,15 @@ mu4 = (6, 6)
 sg4 = (1, 1)
 
 # Probability of call arriving within given node
-P = np.zeros((sizeX, sizeY))
+P = np.zeros((nX, nY))
 
-for i in xrange(sizeX):
-    for j in xrange(sizeY):
+for i in xrange(nX):
+    for j in xrange(nY):
         P[i][j] += 0.10*bvni(mu1, sg1, (i, j))
         P[i][j] += 0.10*bvni(mu2, sg2, (i, j))
         P[i][j] += 0.10*bvni(mu3, sg3, (i, j))
-        p[i][j] += 0.10*bvni(mu4, sg4, (i, j))
+        P[i][j] += 0.10*bvni(mu4, sg4, (i, j))
         
 
-network(networkFile, nX, nY, nBases, Tresp, P, bases, ambLocs)
+network(networkFile, nX, nY, nodeDist, Tresp, P, bases, ambLocs)
 heatmap(networkFile, mapFile)

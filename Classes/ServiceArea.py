@@ -1,21 +1,34 @@
+import numpy as np
+
 class ServiceArea():
 	# Comment inserted here!
 	def __init__(self, nodes, bases, dist, maxDist):
 		self.nodes	 = nodes
 		self.bases	 = bases
 		self.maxDist = maxDist
-		self.__dist  = dist
+		self.__buildDist()
 		self.__buildB()
 		self.__buildNBdist()
 		self.__buildR()
 				
+	def __buildDist(self):
+		# Build distance matrix between nodes (rows) and bases (columns)
+		nodes = self.nodes
+		bases = self.bases
+		I	  = len(nodes)
+		J	  = len(bases)
+		self.dist = np.empty((I, J))
+		for i in xrange(I):
+			for j in xrange(J):
+				self.dist[i][j] = self.distance(nodes[i]['loc'], bases[j]['loc'])
+
 	def __buildB(self):
 		 # B[i] : bases that can respond to call at i within threshold,
 		 #			sorted in order of distance from i	  
 		 self.__B = {}
 		 for i in self.nodes:
-			 temp = sorted([(self.__dist[i][j], j) for j in self.bases \
-							 if self.__dist[i][j] <= self.maxDist])
+			 temp = sorted([(self.dist[i][j], j) for j in self.bases \
+							 if self.dist[i][j] <= self.maxDist])
 			 self.__B[i] = [k[1] for k in temp]
 								 
 	def __buildR(self):
@@ -30,7 +43,11 @@ class ServiceArea():
 		#	distance from i, so just need to get first element of B[i]
 		self.__NBdist = {}
 		for i in self.nodes: 
-			self.__NBdist[i] = self.__dist[i][self.__B[i][0]]
+			self.__NBdist[i] = self.dist[i][self.__B[i][0]]
+
+	def distance(self, x, y):
+		# Outputs Manhattan distance between two points x and y in R^2
+		return abs(x[0] - y[0]) + abs(x[1] - y[1])
 			
 	def getNodes(self):
 		return self.nodes
@@ -42,7 +59,7 @@ class ServiceArea():
 		return self.maxDist
 			
 	def getDist(self):
-		return self.__dist
+		return self.dist
 
 	def getNBdist(self):
 		return self.__NBdist
@@ -52,3 +69,7 @@ class ServiceArea():
 	
 	def getR(self):
 		return self.__R   
+		for i in nodes:
+			for j in bases:
+				dist[i][j] = distance(nodes[i]['loc'], bases[j]['loc'])
+				

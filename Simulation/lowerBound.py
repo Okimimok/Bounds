@@ -29,7 +29,6 @@ def simulate(svcArea, omega, executeService, debug = False):
 	simState['t']	  = 0
 	simState['A']     = sum(simState['ambs'])
 	simState['debug'] = debug
-	c = 0
 
 	# Simulation output
 	simStats = {}
@@ -44,6 +43,7 @@ def simulate(svcArea, omega, executeService, debug = False):
 	# The end event has priority 2, so events occurring at time T
 	# 	can clear from the FEL first. 
 	T	= omega.T
+	c   = 0
 	fel = FutureEventsList()
 	fel.addEvent(T+1, 'end', priority=2)
 	if len(calls) > 0:
@@ -150,8 +150,7 @@ def executeArrival(simState, simStats, callInfo, fel, svcArea):
 				print 'Call to be completed at time %i' % finishTime
 			break
 		
-	if finishTime == -1 and simState['debug']:
-		print 'Call lost'
+	if finishTime == -1 and simState['debug']: print 'Call lost'
 		
 def executeRedeployment(simState, base, svcArea):
 	bases = svcArea.bases
@@ -159,5 +158,4 @@ def executeRedeployment(simState, base, svcArea):
 	# Increment by one the number of ambulances available at destination
 	simState['ambs'][base] += 1
 	
-	if simState['debug']:
-		print 'Ambulance redeployed to base %s' % str(bases[base]['loc'])
+	if simState['debug']: print 'Redeployment to base %s' % str(bases[base]['loc'])

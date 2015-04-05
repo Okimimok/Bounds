@@ -16,7 +16,7 @@ filepath  = os.path.abspath(os.path.join(basepath, outputFile))
 
 #################################################
 # Basic inputs
-T = 50 
+T = 500 
 
 #################################################
 # Read service distributions from file
@@ -44,13 +44,14 @@ svcArea   = readNetworkFile(networkFile)
 arrStream = StationaryArrivalStream(svcArea, T)
 arrStream.updateP(0.28)
 rndSeed	= 12345 
-iters   = 250
+iters   = 100
 simObj	= np.zeros(iters)
 
 # Computing upper and lower bounds on a separate set of sample paths
 seed(rndSeed)
 for i in xrange(iters):
 	omega	  = SamplePath(svcArea, arrStream, flagQ = False)
-	simObj[i] = simulate(svcDists, omega)
+	simStats  = simulate(svcDists, omega)
+	simObj[i] = simStats['obj']
 
 print 'Maxwell\'s Upper Bound: %.3f +/- %.3f' % confInt(simObj)

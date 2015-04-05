@@ -7,7 +7,7 @@ from ...Classes.StationaryArrivalStream import StationaryArrivalStream
 from ...MaxwellIP import MMIP
 
 networkFile = "9x9//four.txt"
-outputFile	= "etaValues.txt"
+outputFile	= "eta.txt"
 
 import os.path
 basepath  = os.path.dirname(__file__)

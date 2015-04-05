@@ -34,12 +34,12 @@ def heatmap(networkFile, mapFile):
 	plt.close('all')
 
 
-def network(networkFile, nX, nY, nBases, Tresp, P, bases, ambLocs):
+def network(networkFile, nX, nY, nodeDist, Tresp, P, bases, ambLocs):
 	basepath = os.path.dirname(__file__)
 	filepath = os.path.abspath(os.path.join(basepath, "..//Networks//", networkFile))
 
 	with open(filepath, 'w') as f:
-		f.write('%i %i %i %i \n' % (nX, nY, nBases, Tresp))
+		f.write('%i %i %.2f %i\n' % (nX, nY, nodeDist, Tresp))
 		for i in xrange(nX):
 			for j in xrange(nY):
 				if (i, j) in bases:

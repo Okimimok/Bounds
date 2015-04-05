@@ -21,9 +21,9 @@ ambLocs[(2, 6)]  = 1
 ambLocs[(6, 2)]  = 1
 ambLocs[(6, 6)]  = 1
 
-# Response time threshold
-Tresp  = 4
-nBases = len(bases)
+# Response time threshold, distance between nodes
+Tresp    = 4
+nodeDist = 1
 
 # Peaks
 mu1 = (2, 2)
@@ -35,5 +35,15 @@ sg3 = (2, 2)
 mu4 = (6, 6)
 sg4 = (2, 2)
 
-network(networkFile, nX, nY, nBases, Tresp, P, bases, ambLocs)
+# Probability of call arriving within given node
+P = np.zeros((nX, nY))
+
+for i in xrange(nX):
+    for j in xrange(nY):
+        P[i][j] += 0.10*bvni(mu1, sg1, (i, j))
+        P[i][j] += 0.10*bvni(mu2, sg2, (i, j))
+        P[i][j] += 0.10*bvni(mu3, sg3, (i, j))
+        P[i][j] += 0.10*bvni(mu4, sg4, (i, j))
+
+network(networkFile, nX, nY, nodeDist, Tresp, P, bases, ambLocs)
 heatmap(networkFile, mapFile)
