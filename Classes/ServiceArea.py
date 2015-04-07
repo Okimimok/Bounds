@@ -2,10 +2,11 @@ import numpy as np
 
 class ServiceArea():
 	# Comment inserted here!
-	def __init__(self, nodes, bases, dist, maxDist):
-		self.nodes	 = nodes
-		self.bases	 = bases
-		self.maxDist = maxDist
+	def __init__(self, nodes, bases, nodeDist, maxDist):
+		self.nodes	  = nodes
+		self.bases	  = bases
+		self.nodeDist = nodeDist
+		self.maxDist  = maxDist
 		self.__buildDist()
 		self.__buildB()
 		self.__buildNBdist()
@@ -47,7 +48,7 @@ class ServiceArea():
 
 	def distance(self, x, y):
 		# Outputs Manhattan distance between two points x and y in R^2
-		return abs(x[0] - y[0]) + abs(x[1] - y[1])
+		return self.nodeDist*(abs(x[0] - y[0]) + abs(x[1] - y[1]))
 			
 	def getNodes(self):
 		return self.nodes

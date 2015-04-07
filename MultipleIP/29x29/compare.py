@@ -15,7 +15,7 @@ from ...Simulation.boundingSystem import simulate as simUB
 from ...MultipleIP import PIP2 
 from ...PerfectIP import IP
 
-networkFile = "9x9//four.txt"
+networkFile = "29x29//seven.txt"
 etaFile     = "eta.txt"
 outputFile	= "compare.txt"
 xlsFile     = "compare.xlsx"
@@ -29,9 +29,14 @@ xlsPath  = os.path.join(basepath, xlsFile)
 #####################################################
 # Basic inputs
 T		= 1440
-vals    = np.arange(12, 25, dtype = 'int64')
-probs   = np.ones(13)/13
-svcDist = ServiceDistribution(vals, probs)
+# Distribution: ceil(Y), where Y ~ Exponential(1/34)
+mu        = 30.0
+numVals   = 180
+vals      = np.arange(1, numVals+1)
+probs     = [exp(-(vals[i]-1)/mu)*(1 - exp(-1/mu))\
+					 for i in xrange(numVals)]
+probs[-1] += 1 - sum(probs)
+svcDist   = ServiceDistribution(vals, probs)
 
 #####################################################
 # Network, arrival patterns
@@ -72,10 +77,10 @@ utils = [0.06]
 # Estimate objective value and gradient at current point
 # seed1 used for calibrating penalty multipliers
 # seed2 used for comparing bounds 
-simN     = 1000
-gradN    = 1000
-lineN    = 1000
-iters	 = 5
+simN     = 100
+gradN    = 100
+lineN    = 100
+iters	 = 1
 seed1	 = 33768
 seed2	 = 12345
 settings = {'OutputFlag' : 0}

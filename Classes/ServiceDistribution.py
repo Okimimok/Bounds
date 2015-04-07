@@ -68,7 +68,7 @@ class ServiceDistribution:
 		elif x >= self.__maxVal:
 			val = 1
 		else:
-			val = self.__cdf[x]
+			val = self.__cdf[int(x)]
 
 		return val
   

@@ -12,7 +12,7 @@ def bivariateNormalIntegral(mu, sigma, x):
 	
 	return term1 - term2 - term3 + term4
 
-def heatmap(networkFile, mapFile, bases):
+def heatmap(networkFile, mapFile, bases, majorAx=-1, minorAx=-1):
 	basepath  = os.path.dirname(__file__)
 	filepath  = os.path.abspath(os.path.join(basepath, "..//Networks//", networkFile))
 	filepath2 = os.path.abspath(os.path.join(basepath, "..//Networks//", mapFile))
@@ -31,9 +31,14 @@ def heatmap(networkFile, mapFile, bases):
 	ax = plt.subplot(111)
 
 	plt.pcolormesh(rows, cols, prob, cmap = 'Greys')
-	ax.xaxis.set_minor_locator(MultipleLocator(1))
-	ax.yaxis.set_minor_locator(MultipleLocator(1))
 
+	if minorAx > 0:
+		ax.xaxis.set_minor_locator(MultipleLocator(minorAx))
+		ax.yaxis.set_minor_locator(MultipleLocator(minorAx))
+
+	if majorAx > 0:
+		ax.xaxis.set_major_locator(MultipleLocator(majorAx))
+		ax.yaxis.set_major_locator(MultipleLocator(majorAx))
 	ax.xaxis.grid(True,'minor', linewidth = 0.5, linestyle = '-')
 	ax.yaxis.grid(True,'minor', linewidth = 0.5, linestyle = '-')
 	ax.xaxis.grid(True,'major',linewidth=1.5, linestyle = '-')
@@ -42,6 +47,8 @@ def heatmap(networkFile, mapFile, bases):
 	for j in bases:
 		ax.plot(j[0]+0.5, j[1]+0.5, marker = 'o', color='g')
 	
+	plt.xlim([0, nX])
+	plt.ylim([0, nY])
 	plt.savefig(filepath2)
 	plt.close('all')
 

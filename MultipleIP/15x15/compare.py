@@ -1,5 +1,6 @@
 import numpy as np
 import time
+from math import exp
 from random import seed
 from ...Methods.graph import readNetworkFile
 from ...Methods.sample import confInt
@@ -15,7 +16,7 @@ from ...Simulation.boundingSystem import simulate as simUB
 from ...MultipleIP import PIP2 
 from ...PerfectIP import IP
 
-networkFile = "9x9//four.txt"
+networkFile = "15x15//five.txt"
 etaFile     = "eta.txt"
 outputFile	= "compare.txt"
 xlsFile     = "compare.xlsx"
@@ -29,9 +30,14 @@ xlsPath  = os.path.join(basepath, xlsFile)
 #####################################################
 # Basic inputs
 T		= 1440
-vals    = np.arange(12, 25, dtype = 'int64')
-probs   = np.ones(13)/13
-svcDist = ServiceDistribution(vals, probs)
+# Distribution: ceil(Y), where Y ~ Exponential(1/34)
+mu        = 24.0
+numVals   = 120
+vals      = np.arange(1, numVals+1)
+probs     = [exp(-(vals[i]-1)/mu)*(1 - exp(-1/mu))\
+					 for i in xrange(numVals)]
+probs[-1] += 1 - sum(probs)
+svcDist   = ServiceDistribution(vals, probs)
 
 #####################################################
 # Network, arrival patterns
@@ -66,16 +72,16 @@ for m in xrange(M):
 #####################################################
 # System utilizations tested (for comparing bounds)
 #utils	= [0.04, 0.08, 0.12, 0.16, 0.20, 0.24, 0.28, 0.32]
-utils = [0.06]
+utils = [0.05]
 
 #####################################################
 # Estimate objective value and gradient at current point
 # seed1 used for calibrating penalty multipliers
 # seed2 used for comparing bounds 
-simN     = 1000
-gradN    = 1000
-lineN    = 1000
-iters	 = 5
+simN     = 25 
+gradN    = 25
+lineN    = 25
+iters	 = 1
 seed1	 = 33768
 seed2	 = 12345
 settings = {'OutputFlag' : 0}
@@ -94,8 +100,8 @@ lbUtil   = np.zeros((len(utils), simN))
 
 start = time.clock()
 for h in xrange(len(utils)):
-	print 'Arrival probability =  %.3f' % utils[h]
-	arrStream.updateP(utils[h])
+	print 'Arrival probability =  %.3f' % (1 - exp(-utils[h]))
+	arrStream.updateP(1 - exp(-utils[h]))
 	# Gradient Search
 	for i in xrange(iters):
 		print 'Iteration %i' % (i + 1)
