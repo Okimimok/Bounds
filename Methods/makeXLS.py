@@ -13,7 +13,8 @@ def build(filePath, xlsPath):
 		utils = np.zeros((n, m))
 		names = f.readline().split()
 		for i in xrange(n):
-			probs[i] = float(f.readline())
+			line = f.readline().split()
+			probs[i] = float(line[0])
 			for j in xrange(m):
 				line        = f.readline().split()
 				vals[i][j]  = float(line[0])

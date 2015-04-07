@@ -14,10 +14,10 @@ from ...Simulation.boundingSystem import simulate as simUB
 from ...MultipleIP import PIP2 
 from ...PerfectIP import IP
 
-networkFile = "15x15//five.txt"
-etaFile     = "eta.txt"
-outputFile	= "compare.txt"
-xlsFile     = "compare.xlsx"
+networkFile = "15x15//eight.txt"
+etaFile     = "etaeight.txt"
+outputFile	= "compareight.txt"
+xlsFile     = "compareight.xlsx"
 
 import os.path
 basepath = os.path.dirname(__file__)
@@ -70,7 +70,7 @@ for m in xrange(M):
 #####################################################
 # System utilizations tested (for comparing bounds)
 #utils	= [0.04, 0.08, 0.12, 0.16, 0.20, 0.24, 0.28, 0.32]
-utils = [0.09, 0.10, 0.11, 0.12, 0.13]
+utils = [0.06, 0.07, 0.08, 0.09, 0.10, 0.11, 0.12, 0.13]
 
 #####################################################
 # Estimate objective value and gradient at current point

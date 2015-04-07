@@ -26,7 +26,7 @@ arrStream.updateP(0.20)
 
 ##################################################
 # Penalty Multipliers
-gamma   = 0.1*np.ones(T+1)
+gamma   = 0.05*np.ones(T+1)
 penalty = PenaltyMultipliers(gamma)
 
 ##################################################
@@ -46,8 +46,7 @@ for k in xrange(N):
 	settings = {'OutputFlag' : 0}	
 
 	# Penalized IP 
-	p = PIP2.ModelInstance(svcArea, arrStream, omega)
-	p.updateObjective(gamma)
+	p = PIP2.ModelInstance(svcArea, arrStream, omega, gamma)
 	p.solve(settings)
 	ubObj[k]  = p.getObjective()
 	ubUtil[k] = p.estimateUtilization()	
