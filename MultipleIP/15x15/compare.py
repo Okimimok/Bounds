@@ -16,8 +16,8 @@ from ...PerfectIP import IP
 
 networkFile = "15x15//five.txt"
 etaFile     = "eta.txt"
-outputFile	= "compare.txt"
-xlsFile     = "compare.xlsx"
+outputFile	= "compare36.txt"
+xlsFile     = "compare36.xlsx"
 
 import os.path
 basepath = os.path.dirname(__file__)
@@ -29,7 +29,7 @@ xlsPath  = os.path.join(basepath, xlsFile)
 # Basic inputs
 T	      = 1440
 # Distribution: ceil(Y), where Y ~ Exponential(1/34)
-mu        = 24.0
+mu        = 36.0
 numVals   = 120
 vals      = np.arange(1, numVals+1)
 probs     = [exp(-(vals[i]-1)/mu)*(1 - exp(-1/mu))\
@@ -69,8 +69,7 @@ for m in xrange(M):
 
 #####################################################
 # System utilizations tested (for comparing bounds)
-#utils	= [0.04, 0.08, 0.12, 0.16, 0.20, 0.24, 0.28, 0.32]
-utils = [0.09, 0.10, 0.11, 0.12, 0.13]
+utils = [0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10, 0.11]
 
 #####################################################
 # Estimate objective value and gradient at current point
@@ -171,7 +170,7 @@ print 'Search took %.4f seconds' % (finish - start)
 # Writing results to file
 with open(outPath, 'w') as f:
 	f.write('%i 4\n' % len(utils))
-	f.write('LowerBd PerfectInfo PenaltyBd MaxwellBd\n')
+	f.write('PerfectInfo PenaltyBd MaxwellBd\n')
 	for h in xrange(len(utils)):
 		f.write('%.3f %i \n' % (utils[h], kmax[h]))
 		temp1 = confInt(piObj[h])

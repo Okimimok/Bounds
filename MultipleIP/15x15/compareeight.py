@@ -170,8 +170,8 @@ print 'Search took %.4f seconds' % (finish - start)
 
 # Writing results to file
 with open(outPath, 'w') as f:
-	f.write('%i 4\n' % len(utils))
-	f.write('LowerBd PerfectInfo PenaltyBd MaxwellBd\n')
+	f.write('%i 3\n' % len(utils))
+	f.write('PerfectInfo PenaltyBd MaxwellBd\n')
 	for h in xrange(len(utils)):
 		f.write('%.3f %i \n' % (utils[h], kmax[h]))
 		temp1 = confInt(piObj[h])

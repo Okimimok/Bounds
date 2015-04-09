@@ -1,11 +1,13 @@
-from gurobipy import Model, GRB, quicksum 
+from gurobipy import Model, GRB, LinExpr 
 import numpy as np
 
 class ModelInstance:
 	# Similar to PIP, but multi-counts coverage when computing penalties.
 	#	Variant of code allowing for quick evaluation (and gradient information)
 	#	from a single penalty.
-	def __init__(self, svcArea, arrStream, omega):
+	# If multipliers specified from the outset, coefficents for y-variables
+	#	set without having to call updateObjective.
+	def __init__(self, svcArea, arrStream, omega, gamma=None):
 		self.nodes = svcArea.nodes
 		self.bases = svcArea.bases
 		self.dist  = svcArea.getDist()
@@ -16,25 +18,23 @@ class ModelInstance:
 		self.calls = omega.getCalls()
 		self.Q	   = omega.getQ()
 
-		# Number of degrees of freedom in the penalty. Defaults to one.
-		#	(1 = time based, 2 = time-location based)
-		self.dof = 1 
-		
-		# Create model object and dictionary of decision vars
-		self.formulate(svcArea, omega)
+		# Number of degrees of freedom in the penalty. Defaults to zero
+		#	(0 = no penalty, 1 = time based, 2 = time-location based)
+		if gamma is not None:
+			self.dof = gamma.ndim
+		else:
+			self.dof = 0	
 
-	def formulate(self, svcArea, omega):
+		# Create model object and dictionary of decision vars
+		self.formulate(gamma)
+
+	def formulate(self, gamma):
 		# Formulates the integer program, by defining the appropriate decision
 		#	variables and constraints. Objective function values for the x-vars
 		#	are set, but those for the y-vars are kept to zero. 
 		#
 		# Returns the resulting model, as well as a dictionary containing 
 		#	decision variables.
-
-	
-		########################################################
-		###################### BEGIN MODEL
-		########################################################
 		self.m = Model()
 
 		###################### DECISION VARIABLES
@@ -49,49 +49,85 @@ class ModelInstance:
 
 		# At time t, the number of idle ambulances at base j
 		y = {}
-		for t in xrange(self.T+1):
-			y[t] = {}
-			for j in self.bases:
-				y[t][j] = self.m.addVar(lb=0, ub=self.A, vtype=GRB.INTEGER)
+		if self.dof == 1:
+			for t in xrange(self.T+1):
+				y[t] = {}
+				for j in self.bases:
+					if t in self.calls and j in self.B[self.calls[t]['loc']]:
+						y[t][j] = self.m.addVar(lb=0, ub=self.A, vtype=GRB.INTEGER,\
+									obj = gamma[t]*(self.RP[t][j]-1))
+					else:
+						y[t][j] = self.m.addVar(lb=0, ub=self.A, vtype=GRB.INTEGER,\
+									obj = gamma[t]*self.RP[t][j])
+		elif self.dof == 2:
+			for t in xrange(self.T+1):
+				y[t] = {}
+				for j in self.bases:
+					if t in self.calls and j in self.B[self.calls[t]['loc']]:
+						y[t][j] = self.m.addVar(lb=0, ub=self.A, vtype=GRB.INTEGER,\
+									obj = gamma[t][j]*(self.RP[t][j]-1))
+					else:
+						y[t][j] = self.m.addVar(lb=0, ub=self.A, vtype=GRB.INTEGER,\
+									obj = gamma[t][j]*self.RP[t][j])
+		else:
+			for t in xrange(self.T+1):
+				y[t] = {}
+				for j in self.bases:
+					y[t][j] = self.m.addVar(lb=0, ub=self.A, vtype=GRB.INTEGER)
 			
 		self.m.update()
 
 		######################### CONSTRAINTS
-		# At most one response to a call
-		for t in self.calls:
-			loc = self.calls[t]['loc']
-			self.m.addConstr(quicksum(quicksum(x[t][j][k] for j in self.B[loc])\
-												 for k in self.bases) <= 1)
+		# IP constraints, all melded into one for loop. Probably difficult
+		#	to read, and so longform included at end of file.
+		callTimes = sorted(self.calls.keys())
+		N		  = len(callTimes)
 
-		# No dispatch unless ambulance idle
-		for t in self.calls:
-			loc = self.calls[t]['loc']
-			for j in self.B[loc]:
-			   self.m.addConstr(quicksum(x[t][j][k] for k in self.bases) <= y[t][j])
+		cnt = 0
+		for t in xrange(self.T):
+			if cnt < N and t == callTimes[cnt]:
+				cnt  += 1 
+				loc   = self.calls[t]['loc']
+				expr1 = LinExpr()
+				for j in self.bases:
+					expr3 = LinExpr(1, y[t][j])
+					for (s, l) in self.Q[t+1][j]:
+						expr3.add(x[s][l][j], 1)
 
-		# Flow balance for idle ambulances
-		for t in xrange(self.T+1):
-			if t > 0: 
-				# Did a call arrive during the last time period?
-				if (t-1) in self.calls:
-					loc = self.calls[t-1]['loc']
-					for j in self.bases:
-						# Could base i have dispatched an ambulance to the call?
-						if j in self.B[loc]:
-							self.m.addConstr(y[t][j] == y[t-1][j] \
-								+ quicksum([x[s][k][j] for (s,k) in self.Q[t][j]])\
-								- quicksum([x[t-1][j][k] for k in self.bases]))
-						else:
-							self.m.addConstr(y[t][j] == y[t-1][j] \
-								+ quicksum([x[s][k][j] for (s,k) in self.Q[t][j]]))	   
-				else:
-					for j in self.bases: 
-						self.m.addConstr(y[t][j] == y[t-1][j] \
-							+ quicksum([x[s][k][j] for (s,k) in self.Q[t][j]]))
+					if j in self.B[loc]:
+						expr2 = LinExpr()
+						for k in self.bases:
+							expr1.add(x[t][j][k], 1)
+							expr2.add(x[t][j][k], 1)
+							expr3.add(x[t][j][k], -1)
+						self.m.addConstr(expr2 <= y[t][j])
+
+					self.m.addConstr(expr3 == y[t+1][j])
+
+				self.m.addConstr(expr1 <= 1)	
+					
+			elif t > 0:
+				for j in self.bases: 
+					expr3 = LinExpr(1, y[t][j])
+					for (s, k) in self.Q[t+1][j]:
+						expr3.add(x[s][k][j], 1)
+					self.m.addConstr(expr3 == y[t+1][j])
 			else:
 				for j in self.bases:
-					self.m.addConstr(y[t][j] == self.bases[j]['alloc'])
+					self.m.addConstr(y[1][j] == self.bases[j]['alloc'])
 
+		# Boundary condition: call arrives in final time period
+		if self.T == callTimes[-1]:
+			loc   = self.calls[self.T]['loc']
+			expr1 = LinExpr()
+			for j in self.B[loc]:
+				expr2 = LinExpr()
+				for k in self.bases:
+					expr1.add(x[self.T][j][k], 1)
+					expr2.add(x[self.T][j][k], 1)
+				self.m.addConstr(expr2 <= y[self.T][j])
+
+			self.m.addConstr(expr1 <= 1)
 		# Dictionary containing model decision variables
 		self.v = {'x' : x, 'y' : y}
 
@@ -102,7 +138,7 @@ class ModelInstance:
 		# gamma : Vector of penalty weights 
 		#
 		# Updates the objective function coefficients for the y-variables
-		y        = self.v['y']
+		y		 = self.v['y']
 		self.dof = gamma.ndim
 
 		if self.dof == 1:
@@ -131,6 +167,9 @@ class ModelInstance:
 		#	OutputFlag), and whose values, well, duh.
 	
 		# Putting settings into effect.
+		if 'OutputFlag' in settings:
+			self.m.setParam('OutputFlag', settings['OutputFlag'])
+
 		for option in settings:
 			self.m.setParam(option, settings[option])
 
@@ -146,14 +185,14 @@ class ModelInstance:
 
 	def getObjective(self):
 		# If the model has already been solved, return objective associated
-		# 	 with optimal solution
+		#	 with optimal solution
 		return self.m.objVal
 
 	def estimateUtilization(self):
 		# If the model has already been solved, finds average ambulance utilization
 		#	associated with the optimal solution. (By summing busy times and dividing
 		#	by (# ambs)*(length of horizon)
-		x     = self.v['x']
+		x	  = self.v['x']
 		calls = self.calls
 		dist  = self.dist
 		busy  = 0.0
@@ -174,7 +213,7 @@ class ModelInstance:
 
 	def estimateGradient(self):
 		# Given an already solved instance of this IP model, returns the gradient
-		# 	estimate arising from this solution.
+		#	estimate arising from this solution.
 		y = self.v['y']
 
 		if self.dof == 1:

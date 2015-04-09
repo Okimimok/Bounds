@@ -31,7 +31,7 @@ penalty = PenaltyMultipliers(gamma)
 
 ##################################################
 # Generating sample paths
-N	   = 3 
+N	   = 25 
 ubObj  = np.zeros(N)
 ubUtil = np.zeros(N)
 
