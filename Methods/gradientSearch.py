@@ -1,10 +1,43 @@
 import numpy as np
 from ..Classes.SamplePath import SamplePath
+from random import seed
 
 # Methods that can be used to perform a gradient search with respect
 #	to the penalty parameters gamma (gamma_t, gamma_tj)
 
-def solvePIPs(svcArea, arrStream, svcDist, gamma, IPmodel, settings, N, freq = 1):
+# Gradient search
+def fullSearch(svcArea, arrStream, svcDist, penalty, IP, settings, N,\
+											randSeed, iters, freq=-1, debug=False):
+	for i in xrange(iters):
+		if debug: print 'Iteration %i\n    Estimating gradient...' % (i + 1)
+		gamma = penalty.getGamma()
+		seed(randSeed)
+		obj, nabla = solvePIPs(svcArea, arrStream, svcDist, gamma, IP, settings, N, freq)
+		penalty.setNabla(nabla) 
+		
+		if debug: print '    Line Search...'
+
+		seed(randSeed)															
+		vals = lineSearch(svcArea, arrStream, svcDist, penalty, IP, settings, N, freq) 
+		bestStep = 0
+		bestVal  = np.mean(obj[:N])
+		count	 = 0
+			
+		if debug: print '        Step Size 0, Mean Obj. %.4f' % bestVal
+		for j in penalty.getStepSizes():
+			if debug: print '        Step Size %.3f, Mean Obj. %.4f' % (j, vals[count])
+			if vals[count] < bestVal:
+				bestStep = j
+				bestVal  = vals[count]
+			count += 1
+
+		# If step size is zero, take smaller steps. O/w, update gradient.
+		if bestStep == 0:
+			penalty.scaleGamma(0.5)
+		else:
+			penalty.updateGamma(-bestStep*nabla)
+
+def solvePIPs(svcArea, arrStream, svcDist, gamma, IPmodel, settings, N, freq=-1):
 	# Solves N instances of the IP corresponding to different sample 
 	#	 paths. Outputs the objective value attained in every problem
 	#	 instance, as well as an estimate of the gradient.
@@ -16,13 +49,11 @@ def solvePIPs(svcArea, arrStream, svcDist, gamma, IPmodel, settings, N, freq = 1
 	nabla = np.zeros(gamma.shape)
    
 	for i in xrange(N):
-		if (i + 1) % freq == 0: print '---Path %i' % (i+1)
+		if freq > 0 and (i + 1) % freq == 0: print '---Path %i' % (i+1)
 		
-		# Generate sample path
-		omega = SamplePath(svcArea, arrStream, svcDist)
-
-		# Create instance of integer program, solve, get gradient estimate
-		prob = IPmodel.ModelInstance(svcArea, arrStream, omega)
+		# Generate sample path, solve IP, get gradient estimate
+		omega  = SamplePath(svcArea, arrStream, svcDist)
+		prob   = IPmodel.ModelInstance(svcArea, arrStream, omega)
 		prob.updateObjective(gamma)
 		prob.solve(settings)
 		obj[i] = prob.getObjective()
@@ -30,7 +61,7 @@ def solvePIPs(svcArea, arrStream, svcDist, gamma, IPmodel, settings, N, freq = 1
 	   
 	return obj, nabla
 
-def lineSearch(svcArea, arrStream, svcDist, penalty, IPmodel, settings, N, freq=1):
+def lineSearch(svcArea, arrStream, svcDist, penalty, IPmodel, settings, N, freq=-1):
 	# Given an incumbent solution and gradient estimate at that point,
 	#	evaluates the objective function value associated with penalty
 	#	obtained by moving for various step sizes along the gradient.
@@ -43,7 +74,7 @@ def lineSearch(svcArea, arrStream, svcDist, penalty, IPmodel, settings, N, freq=
 	nabla    = penalty.getNabla()
 	 
 	for i in xrange(N):
-		if (i+1) % freq == 0: print '---Path %i' % (i+1)
+		if freq > 0 and (i+1) % freq == 0: print '---Path %i' % (i+1)
 			   
 		# Generate sample path, create skeleton of IP
 		omega = SamplePath(svcArea, arrStream, svcDist)

@@ -68,7 +68,7 @@ def network(networkFile, nX, nY, nodeDist, Tresp, P, bases, ambLocs):
 						ambs = 0
 
 					# Node location, arrival probability, is base?, # ambs deployed
-					f.write('%i %i %.6f %i %i \n' % (i, j, P[i][j], 1, ambs))
+					f.write('%i %i %.6f %i %i \n' % (i, j, P[i][j], bases[(i,j)], ambs))
 					
 				else:
-				   f.write('%i %i %.6f %i %i \n' % (i, j, P[i][j], 0, 0))
+				   f.write('%i %i %.6f %i %i \n' % (i, j, P[i][j], -1, 0))

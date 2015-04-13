@@ -18,6 +18,7 @@ class ServiceDistribution:
 		self.__maxVal = vals[-1]
 		self.__buildCumul()
 		self.__buildCDF()
+		self.__computeMean()
 
 	def __buildCumul(self):
 		# Builds a vector containing the cdf evaulated only at
@@ -56,10 +57,13 @@ class ServiceDistribution:
 		return self.support[left]
 
 	def getCDF(self):
-		  return self.__cdf
+		return self.__cdf
 		  
 	def getCumul(self):
-		  return self.__cumul
+		return self.__cumul
+
+	def __computeMean(self):
+		self.mean = sum([self.pmf[i]*self.support[i] for i in xrange(self.__N)])
 
 	def evalCDF(self, x):
 		# Given x, computes F(x)

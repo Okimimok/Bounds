@@ -8,6 +8,7 @@ class StationaryArrivalStream():
 		self.__buildPN()
 		self.__buildRP()
 		self.__buildRPN()
+		self.__arrProb = 1.0
 				
 	def __buildP(self):
 		# P[t][i] = Probability of call arrival to node i at time t
@@ -46,11 +47,12 @@ class StationaryArrivalStream():
 			for j in self.__svcArea.bases:
 				self.__RPN[t][j] = sum(self.__PN[t][i] for i in R[j])
 		
-	def updateP(self, factor):
+	def updateP(self, p):
 		# Update the arrival probability matrix P by scaling the normalized
 		#	matrix PN by a constant factor (requires updating RP)
-		self.__P = factor*self.__PN	
+		self.__P = p*self.__PN	
 		self.__buildRP()
+		self.__arrProb = p
 
 	def getP(self):
 		return self.__P
@@ -63,3 +65,6 @@ class StationaryArrivalStream():
 		
 	def getRPN(self):
 		return self.__RPN
+
+	def getArrProb(self):
+		return self.__arrProb

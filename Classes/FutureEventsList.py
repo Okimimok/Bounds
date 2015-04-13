@@ -21,7 +21,7 @@ class FutureEventsList():
 			if event[1] == name:
 				hits.append([event[0], event[1], event[2], event[3]])
 				
-		return hits
+		return sorted(hits)
 		
 	def eventCount(self):
 		# Finds the number of events in the FEL

@@ -1,6 +1,7 @@
 import numpy as np
 import os.path
 from ..Classes.ServiceArea import ServiceArea
+from ..Classes.ServiceDistribution import ServiceDistribution
 
 def readNetworkFile(networkFile):
 	# Given data about a service area stored in a text file (containing info)
@@ -28,20 +29,41 @@ def readNetworkFile(networkFile):
 		sizeY	 = int(line[1])
 		nodeDist = float(line[2])
 		maxDist  = int(line[3])
-		numBases = 0
 		numNodes = 0
 		
 		for i in xrange(sizeX):
 			for j in xrange(sizeY):
 				line = f.readline().split()
 				nodes[numNodes] = {'loc':(i, j), 'prob':float(line[2])}
-								
-				if int(line[3]) > 0:
-					bases[numBases]			 = {}
-					bases[numBases]['loc']	 = (int(line[0]), int(line[1]))
-					bases[numBases]['alloc'] = int(line[4])
-					numBases += 1
+
+				# Checking base number, if any						
+				tmp = int(line[3])
+				if tmp >= 0:
+					bases[tmp]			= {}
+					bases[tmp]['loc']	= (int(line[0]), int(line[1]))
+					bases[tmp]['alloc'] = int(line[4])
 					
 				numNodes += 1
 
 	return ServiceArea(nodes, bases, nodeDist, maxDist)
+
+
+def readEtaFile(etaPath):
+	with open(etaPath, 'r') as f:
+		line  = f.readline().split()
+		R     = int(line[0]) 
+		M     = int(line[1])
+		vals  = np.arange(1, R)
+		cdfs  = np.empty((M, R))
+	
+		for r in xrange(R):
+			line = f.readline().split()
+			for m in xrange(M):
+				cdfs[m][r] = float(line[m])
+
+	svcDists = {}
+	for m in xrange(M):
+		pmf = cdfs[m][1:] - cdfs[m][:R-1]
+		svcDists[m] = ServiceDistribution(vals, pmf)
+
+	return svcDists

@@ -11,9 +11,6 @@ class ModelInstance:
 		self.formulate(svcArea, svcDist)
 		
 	def formulate(self, svcArea, svcDist):
-		########################################################
-		###################### BEGIN MODEL
-		########################################################
 		self.m = Model()
 
 		###################### DECISION VARIABLES
@@ -59,13 +56,11 @@ class ModelInstance:
 		self.v = {'x' : x, 'y' : y, 'p' : p}
 		
 	def solve(self, settings={}):	
-		# Given a fully-formulated model, as well as solver settings, solves 
-		#	the IP, and returns the model object associated with the resulting
-		#	optimal solution.
+		# Given a fully-formulated model, solves the IP, and returns the model 
+		#   object associated with the resulting optimal solution.
 		# Settings is a dictionary whose keys are model parameters (e.g., MIPGap,
 		#	OutputFlag), and whose values, well, duh.
 	
-		# Putting settings into effect.
 		if 'OutputFlag' in settings:
 			self.m.setParam('OutputFlag', settings['OutputFlag'])
 
@@ -83,6 +78,5 @@ class ModelInstance:
 		return self.v
 
 	def getObjective(self):
-		# If model solved, return objective associated with optimal solution
 		return self.m.objVal
 	

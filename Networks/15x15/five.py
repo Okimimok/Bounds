@@ -12,20 +12,20 @@ nY = 15
 nodes = [(i, j) for i in xrange(nX) for j in xrange(nY)]
 
 # Dispersion of bases within grid
-bases = [(1, 1), (7, 1), (13, 1), (4, 4), (10, 4), (1, 7), \
-			(7, 7), (7, 13), (4, 10), (10, 10), (1, 13), \
-			(13, 7), (13, 13)]
+bases = {(1, 13): 0, (7, 13): 1, (13, 13): 2, (4, 10): 3, (10, 10): 4,\
+			(1, 7): 5, (7, 7): 6, (13, 7): 7, (4, 4): 8, (10, 4): 9,\
+			(1, 1): 10, (7, 1): 11, (13, 1): 12}
 
 # Dispersion of ambulances within bases
 ambLocs = {}
 ambLocs[(7, 7)]  = 1
-ambLocs[(1, 7)]  = 1
-ambLocs[(7, 1)]  = 1
-ambLocs[(7, 13)] = 1
-ambLocs[(13, 7)] = 1
+ambLocs[(4, 4)]  = 1
+ambLocs[(4, 10)]  = 1
+ambLocs[(10, 4)] = 1
+ambLocs[(10, 10)] = 1
 
 # Response time threshold, distance between nodes
-Tresp	 = 4 
+Tresp	 = 6 
 nodeDist = 1
 
 # Peaks

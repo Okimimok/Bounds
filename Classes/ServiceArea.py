@@ -5,6 +5,7 @@ class ServiceArea():
 	def __init__(self, nodes, bases, nodeDist, maxDist):
 		self.nodes	  = nodes
 		self.bases	  = bases
+		self.A        = sum([bases[j]['alloc'] for j in bases])
 		self.nodeDist = nodeDist
 		self.maxDist  = maxDist
 		self.__buildDist()

@@ -1,7 +1,7 @@
 import numpy as np
 import time
 from random import seed
-from ...Methods.graph import readNetworkFile
+from ...Methods.graph import readNetworkFile, readEtaFile
 from ...Methods.sample import confInt
 from ...Methods import makeXLS
 from ...Methods.gradientSearch import solvePIPs, lineSearch
@@ -13,12 +13,11 @@ from ...Simulation import policies
 from ...Simulation.lowerBound import simulate as simLB
 from ...Simulation.boundingSystem import simulate as simUB
 from ...MultipleIP import PIP2 
-from ...PerfectIP import IP
 
 networkFile = "9x9//four.txt"
-etaFile     = "eta.txt"
-outputFile	= "compare.txt"
-xlsFile     = "compare.xlsx"
+etaFile     = "9x9//eta.txt"
+outputFile	= "comparetemp.txt"
+xlsFile     = "comparetemp.xlsx"
 
 import os.path
 basepath = os.path.dirname(__file__)
@@ -46,22 +45,7 @@ penalty.setStepSizes([0.5, 1.0, 2.0, 4.0])
 
 #####################################################
 # Service distributions for Maxwell's bounding system 
-with open(etaPath, 'r') as f:
-	line  = f.readline().split()
-	R     = int(line[0]) 
-	M     = int(line[1])
-	vals  = np.arange(1, R)
-	cdfs  = np.empty((M, R))
-	
-	for r in xrange(R):
-		line = f.readline().split()
-		for m in xrange(M):
-			cdfs[m][r] = float(line[m])
-
-svcDists = {}
-for m in xrange(M):
-	pmf = cdfs[m][1:] - cdfs[m][:R-1]
-	svcDists[m] = ServiceDistribution(vals, pmf)
+svcDists = readEtaFile(etaFile)
 
 #####################################################
 # System utilizations tested (for comparing bounds)
@@ -72,10 +56,10 @@ utils = [0.06]
 # Estimate objective value and gradient at current point
 # seed1 used for calibrating penalty multipliers
 # seed2 used for comparing bounds 
-simN     = 1000
-gradN    = 1000
-lineN    = 1000
-iters	 = 5
+simN     = 10
+gradN    = 10
+lineN    = 10
+iters	 = 1 
 seed1	 = 33768
 seed2	 = 12345
 settings = {'OutputFlag' : 0}
@@ -150,17 +134,17 @@ for h in xrange(len(utils)):
 		lbUtil[h][i] = lbStats['util']
 
 		# Perfect information upper bound
-		m1 = PIP2.ModelInstance(svcArea, arrStream, omega)
-		m1.updateObjective(gamma)
-		m1.solve(settings)
-		ubObj[h][i]  = m1.getObjective()
-		ubUtil[h][i] = m1.estimateUtilization()	
+		m = PIP2.ModelInstance(svcArea, arrStream, omega)
+		m.solve(settings)
+		piObj[h][i]  = m.getObjective()	
+		piUtil[h][i] = m.estimateUtilization()
 
 		# Penalized upper bound
-		m2 = IP.ModelInstance(svcArea, arrStream, omega)
-		m2.solve(settings)
-		piObj[h][i]  = m2.getObjective()	
-		piUtil[h][i] = m2.estimateUtilization()
+		m.updateObjective(gamma)
+		m.solve(settings)
+		ubObj[h][i]  = m.getObjective()
+		ubUtil[h][i] = m.estimateUtilization()	
+
 						 
 	print 'Arrival Probability = %.3f' % utils[h]
 	print 'Lower Bound         : %.3f +/- %.3f'   % confInt(lbObj[h])

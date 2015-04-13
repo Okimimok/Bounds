@@ -2,7 +2,6 @@ import numpy as np
 import MMIP
 
 def solveIPs(svcArea, arrStream, svcDist, filePath):
-	#################################################
 	# Maximum values r and m can take
 	maxM  = sum([svcArea.bases[j]['alloc'] for j in svcArea.bases])
 	maxR  = -1
@@ -15,7 +14,6 @@ def solveIPs(svcArea, arrStream, svcDist, filePath):
 
 	maxR += max(svcDist.support)
 
-	##################################################
 	# Obtaining eta values
 	eta      = np.zeros((maxR+1, maxM+1))
 	settings = {'OutputFlag': 0, 'MIPGap': 0.005}

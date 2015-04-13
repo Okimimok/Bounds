@@ -2,22 +2,23 @@ import numpy as np
 import time
 from math import exp
 from random import seed
-from ...Methods.graph import readNetworkFile
+from ...LowerIP import compliance
 from ...Methods.sample import confInt
-from ...Methods import makeXLS
-from ...Methods.gradientSearch import solvePIPs, lineSearch
+from ...Methods import makeXLS, readFiles
+from ...Methods.gradientSearch import fullSearch
 from ...Classes.StationaryArrivalStream import StationaryArrivalStream
 from ...Classes.ServiceDistribution import ServiceDistribution
 from ...Classes.SamplePath import SamplePath
 from ...Classes.PenaltyMultipliers import PenaltyMultipliers
 from ...Simulation.boundingSystem import simulate as simUB
+from ...Simulation.lowerBound import simulate as simLB
+from ...Simulation.tablePolicies import compliance as simCT
 from ...MultipleIP import PIP2 
-from ...PerfectIP import IP
 
 networkFile = "15x15//five.txt"
 etaFile     = "eta.txt"
-outputFile	= "compare36.txt"
-xlsFile     = "compare36.xlsx"
+outputFile	= "compareTest.txt"
+xlsFile     = "compareTest.xlsx"
 
 import os.path
 basepath = os.path.dirname(__file__)
@@ -25,11 +26,9 @@ etaPath  = os.path.join(basepath, etaFile)
 outPath  = os.path.join(basepath, outputFile)
 xlsPath  = os.path.join(basepath, xlsFile)
 
-#####################################################
-# Basic inputs
+# Distribution: ceil(Y), where Y ~ Exponential(1/24)
 T	      = 1440
-# Distribution: ceil(Y), where Y ~ Exponential(1/34)
-mu        = 36.0
+mu        = 24.0
 numVals   = 120
 vals      = np.arange(1, numVals+1)
 probs     = [exp(-(vals[i]-1)/mu)*(1 - exp(-1/mu))\
@@ -37,147 +36,122 @@ probs     = [exp(-(vals[i]-1)/mu)*(1 - exp(-1/mu))\
 probs[-1] += 1 - sum(probs)
 svcDist   = ServiceDistribution(vals, probs)
 
-#####################################################
 # Network, arrival patterns
-svcArea   = readNetworkFile(networkFile)
+svcArea   = readFiles.readNetworkFile(networkFile)
 arrStream = StationaryArrivalStream(svcArea, T)
 
-#####################################################
 # Penalty Multipliers
 gamma	= np.zeros(T+1)
 penalty = PenaltyMultipliers(gamma)
 penalty.setStepSizes([0.5, 1.0, 2.0, 4.0])
 
-#####################################################
 # Service distributions for Maxwell's bounding system 
-with open(etaPath, 'r') as f:
-	line  = f.readline().split()
-	R     = int(line[0]) 
-	M     = int(line[1])
-	vals  = np.arange(1, R)
-	cdfs  = np.empty((M, R))
-	
-	for r in xrange(R):
-		line = f.readline().split()
-		for m in xrange(M):
-			cdfs[m][r] = float(line[m])
+svcDists = readFiles.readEtaFile(etaPath)
 
-svcDists = {}
-for m in xrange(M):
-	pmf = cdfs[m][1:] - cdfs[m][:R-1]
-	svcDists[m] = ServiceDistribution(vals, pmf)
+# Arrival probabilities to be tested
+probs = [0.08, 0.09, 0.10]
+H     = len(probs)
+
+# Compliance table from text file vs. compliance table from MECRP
+tables = {1: {}, 2: {}}
+fixed  = compliance.readTable("15x15//five.txt")
+w      = [16, 8, 4, 2, 1]
+for h in xrange(H):
+	tables[1][h] = fixed
+	tables[2][h] = compliance.buildTable(svcArea, arrStream, svcDist, w)
 
 #####################################################
-# System utilizations tested (for comparing bounds)
-utils = [0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10, 0.11]
-
-#####################################################
-# Estimate objective value and gradient at current point
+# Gradient search and bound comparison
 # seed1 used for calibrating penalty multipliers
 # seed2 used for comparing bounds 
-simN     = 200 
-gradN    = 200
-lineN    = 200
+N        = 500
 iters	 = 4
 seed1	 = 33768
 seed2	 = 12345
 settings = {'OutputFlag' : 0}
 
 # Objective values
-ubObj  = np.zeros((len(utils), simN))
-piObj  = np.zeros((len(utils), simN))
-mxObj  = np.zeros((len(utils), simN))
-
-# Utilizations
-ubUtil  = np.zeros((len(utils), simN))
-piUtil  = np.zeros((len(utils), simN))
-mxUtil  = np.zeros((len(utils), simN))
-
-# The winning heuristic
-kmax  = np.zeros(len(utils), dtype='int64')
-
-start = time.clock()
-for h in xrange(len(utils)):
-	print 'Arrival probability =  %.3f' %  utils[h]
-	arrStream.updateP(utils[h])
-	# Gradient Search
-	for i in xrange(iters):
-		print 'Iteration %i' % (i + 1)
+names = ['LowerBd', 'PerfectInfo', 'PenaltyBd', 'MaxwellBd']
+obj   = {}
+util  = {}
+for name in names:
+	obj[name]  = np.zeros((H, N))
+	util[name] = np.zeros((H, N))
 	
-		# Sampling the gradient    
-		print 'Estimating gradient...'
-		gamma = penalty.getGamma()
-		seed(seed1)
-		obj, nabla = solvePIPs(svcArea, arrStream, svcDist, gamma, PIP2,\
-									 settings, gradN, freq=20)
-		penalty.setNabla(nabla) 
-
-		print 'Line Search...'
-		seed(seed1)															
-		vals = lineSearch(svcArea, arrStream, svcDist, penalty, PIP2,\
-									 settings, lineN, freq=20) 
-		bestStep = 0
-		bestVal  = np.mean(obj[:lineN])
-		count	 = 0
-			
-		#print 'Step Size 0, Mean Obj. %.4f' % bestVal
-		for j in penalty.getStepSizes():
-			#print 'Step Size %.3f, Mean Obj. %.4f' % (j, vals[count])
-			if vals[count] < bestVal:
-				bestStep = j
-				bestVal  = vals[count]
-			count += 1
-
-		# If step size is zero, take smaller steps. O/w, update gradient.
-		if bestStep == 0:
-			penalty.scaleGamma(0.5)
-		else:
-			penalty.updateGamma(-bestStep*nabla)
+# The winning compliance tables
+tBest = np.zeros(H, dtype = 'int64')
+oBest = -1
+start = time.clock()
+for h in xrange(H):
+	print 'Arrival probability =  %.3f' %  probs[h]
+	arrStream.updateP(probs[h])
+	
+	# Gradient search
+	fullSearch(svcArea, arrStream, svcDist, penalty, PIP2, settings, N, seed1, \
+					iters, debug=True)
 
 	# Computing upper and lower bounds on a separate set of sample paths
 	print 'Debiasing...'
 	seed(seed2)
-	for i in xrange(simN):
-		if (i+1)% 20 == 0:
-			print 'Iteration %i' % (i+1)
+	tmp = {}
+	for k in tables:
+		tmp[k] = {'obj': np.zeros(N), 'util': np.zeros(N)}
 
+	for i in xrange(N):
 		omega = SamplePath(svcArea, arrStream, svcDist)
 
 		# Matt Maxwell's upper bound
-		mxStats      = simUB(svcDists, omega)
-		mxObj[h][i]  = mxStats['obj']
-		mxUtil[h][i] = mxStats['util']
+		mxStats                 = simUB(svcDists, omega)
+		obj['MaxwellBd'][h][i]  = mxStats['obj']
+		util['MaxwellBd'][h][i] = mxStats['util']
 
 		# Perfect information upper bound
-		m1 = PIP2.ModelInstance(svcArea, arrStream, omega, gamma)
-		m1.solve(settings)
-		ubObj[h][i]  = m1.getObjective()
-		ubUtil[h][i] = m1.estimateUtilization()	
+		m = PIP2.ModelInstance(svcArea, arrStream, omega)
+		m.solve(settings)
+		obj['PerfectInfo'][h][i]  = m.getObjective()	
+		util['PerfectInfo'][h][i] = m.estimateUtilization()
 
 		# Penalized upper bound
-		m2 = IP.ModelInstance(svcArea, arrStream, omega)
-		m2.solve(settings)
-		piObj[h][i]  = m2.getObjective()	
+		m.updateObjective(gamma)
+		m.solve(settings)
+		obj['PenaltyBd'][h][i]  = m.getObjective()
+		util['PenaltyBd'][h][i] = m.estimateUtilization()	
 
-	print 'Arrival Probability = %.3f' % utils[h]
-	print 'Perfect Information : %.3f +/- %.3f'   % confInt(piObj[h])
-	print 'Penalized Bound     : %.3f +/- %.3f'   % confInt(ubObj[h])
-	print 'Maxwell Bound       : %.3f +/- %.3f\n' % confInt(mxObj[h])
+		# Comparing lower bounds		
+		for k in tables: 		
+			stats = simLB(svcArea, omega, lambda simState, location, fel, svcArea:\
+							simCT(simState, location, fel, svcArea, tables[k][h]))
+			tmp[k]['obj'][i] = stats['obj']
+			tmp[k]['util'][i] = stats['util']
+
+	# Finding best compliance table policy
+	for k in tables:
+		if np.average(tmp[k]['obj']) > oBest:
+			oBest    = np.average(tmp[k]['obj'])
+			tBest[h] = k
+    
+	obj['LowerBd'][h]  = np.copy(tmp[tBest[h]]['obj'])
+	util['LowerBd'][h] = np.copy(tmp[tBest[h]]['util'])	
+		
+	print 'Arrival Probability = %.3f' % probs[h]
+	for name in names:	
+		print name + ': %.3f +/- %.3f' % confInt(obj[name][h])
+
 
 finish   = time.clock() 
 print 'Search took %.4f seconds' % (finish - start)
 
 # Writing results to file
 with open(outPath, 'w') as f:
-	f.write('%i 4\n' % len(utils))
-	f.write('PerfectInfo PenaltyBd MaxwellBd\n')
-	for h in xrange(len(utils)):
-		f.write('%.3f %i \n' % (utils[h], kmax[h]))
-		temp1 = confInt(piObj[h])
-		temp2 = confInt(ubObj[h])
-		temp3 = confInt(mxObj[h])
-		f.write('%.3f %.3f %.3f\n' % (temp1[0], temp1[1], np.average(piUtil[h])))
-		f.write('%.3f %.3f %.3f\n' % (temp2[0], temp2[1], np.average(ubUtil[h])))
-		f.write('%.3f %.3f %.3f\n' % (temp3[0], temp3[1], np.average(mxUtil[h])))
+	f.write('%i %i\n' % (H, len(names)))
+	for name in names: 
+		f.write(name + ' ')
+	f.write('\n')
+
+	for h in xrange(H):
+		f.write('%.3f %i \n' % (probs[h], tBest[h]))
+		for name in names:
+			tmp = confInt(obj[name][h])
+			f.write('%.3f %.3f %.3f\n' % (tmp[0], tmp[1], np.average(util[name][h])))
 
 makeXLS.build(outPath, xlsPath)

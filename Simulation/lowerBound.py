@@ -101,8 +101,7 @@ def simulate(svcArea, omega, executeService, debug = False):
 			# Handle the arrival, schedule next one
 			executeArrival(simState, simStats, nextEvent[2], fel, svcArea)
 			c += 1
-			if c < C:
-				fel.addEvent(times[c], 'arrival', (locs[c], svcs[c]), 1)
+			if c < C: fel.addEvent(times[c], 'arrival', (locs[c], svcs[c]), 1)
 			
 		elif eventType == 'service':
 			executeService(simState, nextEvent[2], fel, svcArea)
