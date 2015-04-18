@@ -27,11 +27,13 @@ class ServiceArea():
 	def __buildB(self):
 		 # B[i] : bases that can respond to call at i within threshold,
 		 #			sorted in order of distance from i	  
-		 self.__B = {}
+		 # BA[i] : same for all bases, not just those within reach of i
+		 self.__B  = {}
+		 self.__BA = {}
 		 for i in self.nodes:
-			 temp = sorted([(self.dist[i][j], j) for j in self.bases \
-							 if self.dist[i][j] <= self.maxDist])
-			 self.__B[i] = [k[1] for k in temp]
+			 temp = sorted([(self.dist[i][j], j) for j in self.bases]) 
+			 self.__BA[i] = [k[1] for k in temp]
+			 self.__B[i]  = [k[1] for k in temp if k[0] <= self.maxDist]
 								 
 	def __buildR(self):
 		# R[j] = Set of demand nodes to which base j response possible
@@ -68,6 +70,9 @@ class ServiceArea():
 		
 	def getB(self):
 		return self.__B
+
+	def getBA(self):
+		return self.__BA
 	
 	def getR(self):
 		return self.__R   

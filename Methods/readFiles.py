@@ -67,3 +67,20 @@ def readEtaFile(etaPath):
 		svcDists[m] = ServiceDistribution(vals, pmf)
 
 	return svcDists
+
+def readVFile(vPath):
+	with open(vPath, 'r') as f:
+		A = int(f.readline()) 
+		v = {}
+		for a in xrange(1, A+1):	
+			line = f.readline().split()
+			v[a] = float(line[1])
+
+	return v
+
+	svcDists = {}
+	for m in xrange(M):
+		pmf = cdfs[m][1:] - cdfs[m][:R-1]
+		svcDists[m] = ServiceDistribution(vals, pmf)
+
+	return svcDists

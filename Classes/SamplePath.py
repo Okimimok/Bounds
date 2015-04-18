@@ -1,19 +1,22 @@
 from ..Methods.sample import discreteN
 from random import random
 from math import ceil
+from bisect import bisect_left
+import numpy as np
 
 class SamplePath():
-	def __init__(self, svcArea, arrStream, svcDist = None, flagQ = True):
-		self.T = arrStream.T		
-		self.svcDist = svcDist
-		self.__buildCalls(arrStream, svcDist)
-		if flagQ:
-			self.__buildQ(svcArea)
+	def __init__(self, svcArea, arrStream, svcDist=None):
+		self.T         = arrStream.T		
+		self.A         = svcArea.A
+		self.svcArea   = svcArea
+		self.arrStream = arrStream
+		self.svcDist   = svcDist
+		self.__buildCalls()
 	
-	def __buildCalls(self, arrStream, svcDist):
+	def __buildCalls(self):
 		# Generate sample path of calls
-		self.__calls = {}
-		P = arrStream.getP()
+		self.calls = {}
+		P = self.arrStream.getP()
 	
 		for t in xrange(self.T + 1):
 			# Call pmf at time t
@@ -21,39 +24,80 @@ class SamplePath():
 		
 			if callLoc != 'null':
 				r = random()
-				self.__calls[t]		   = {}
-				self.__calls[t]['loc'] = callLoc
-				self.__calls[t]['rnd'] = r
-				if svcDist:
-					self.__calls[t]['svc'] = svcDist.sample(r)
+				self.calls[t]		 = {}
+				self.calls[t]['loc'] = callLoc
+				self.calls[t]['rnd'] = r
+
+				# For info relaxed upper bound, one SvcDist object
+				# For Maxwell upper bound, dictionary of these (for various a)
+				try:
+					self.calls[t]['svc'] = self.svcDist.sample(r)
+				except:
+					self.calls[t]['svc'] = np.zeros(self.A+1, dtype='int64')
+					for a in xrange(self.A+1):
+						self.calls[t]['svc'][a] = self.svcDist[a].sample(r)
 		
-	def __buildQ(self, svcArea):
+	def __buildQ(self):
 		# Q[t][j] : Set of dispatch-redeploy decisions (s, k), such that
 		#	  a dispatch from k to time s results in amb becoming free
 		#	  before time t at node j
-		self.__Q = {}
-		B = svcArea.getB()
-		dist = svcArea.getDist()
+		#
+		# Used with the perfect information upper bd (perhaps w/ penalties)
+		self.Q = {}
+		B      = self.svcArea.getB()
+		dist   = self.svcArea.getDist()
 
 		for t in xrange(self.T + 1):
-			self.__Q[t] = {}
-			for j in svcArea.bases:
-				self.__Q[t][j] = []
+			self.Q[t] = {}
+			for j in self.svcArea.bases:
+				self.Q[t][j] = []
 
-		for c in self.__calls:
-			arr = self.__calls[c]['loc']
-			svc = self.__calls[c]['svc']
+		for c in self.calls:
+			arr = self.calls[c]['loc']
+			svc = self.calls[c]['svc']
 		
 			for j in B[arr]:
-				for k in svcArea.bases:
+				for k in self.svcArea.bases:
 					busy  = int(ceil(svc + dist[arr][j] + dist[arr][k]))
 					ready = c + busy
 					if ready <= self.T:
-						self.__Q[ready][k].append((c, j))
-		
+						self.Q[ready][k].append((c, j))
+
+	def __buildQM(self):
+		# QM[t]: Set of pairs (s, a) s.t. if dispatch made to call s < t
+		#	when a ambulances available, service completes before t arrives
+		#	(and no sooner!)
+		#
+		# Used with Matt Maxwell's upper bound for loss systems
+		self.QM = {}
+		times   = sorted(self.calls.keys())
+		last    = times[-1]
+		for t in times:
+			self.QM[t] = []
+
+		for t in times:
+			for a in xrange(1, self.A+1):
+				# Find earliest call time following service completion
+				svc    = self.calls[t]['svc'][a]
+				finish = t + svc
+				# Don't append if call finishes after last arrival
+				if finish <= last:
+					idx  = bisect_left(times, finish)
+					self.QM[times[idx]].append((t, a))
+				
 	def getCalls(self):
-		return self.__calls
+		return self.calls
 	
 	def getQ(self):
-		return self.__Q
+		try:
+			return self.Q
+		except:
+			self.__buildQ()
+			return self.Q
 		
+	def getQM(self):
+		try:
+			return self.QM
+		except:
+			self.__buildQM()
+			return self.QM

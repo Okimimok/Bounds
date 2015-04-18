@@ -35,5 +35,5 @@ for a in table.keys():
 	for j in table[a]:
 		print j, svcArea.bases[j]['loc']
 '''
-compliance.writeTable(tableFile)
+compliance.writeTable(tableFile, table)
 

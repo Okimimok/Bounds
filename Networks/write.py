@@ -31,6 +31,7 @@ def heatmap(networkFile, mapFile, bases, majorAx=-1, minorAx=-1):
 	ax = plt.subplot(111)
 
 	plt.pcolormesh(rows, cols, prob, cmap = 'Greys')
+	#plt.pcolormesh(rows, cols, prob, cmap = 'Greys', vmin=0, vmax=0.008)
 
 	if minorAx > 0:
 		ax.xaxis.set_minor_locator(MultipleLocator(minorAx))
@@ -46,6 +47,12 @@ def heatmap(networkFile, mapFile, bases, majorAx=-1, minorAx=-1):
 
 	for j in bases:
 		ax.plot(j[0]+0.5, j[1]+0.5, marker = 'o', color='g')
+	
+	total = sum(sum(prob))
+	#for i in xrange(nX):
+		#for j in xrange(nY):
+			#tmp = 100*prob[i][j]/total
+			#ax.text(i+0.2, j+0.4, '%.2f'% tmp)
 	
 	plt.xlim([0, nX])
 	plt.ylim([0, nY])

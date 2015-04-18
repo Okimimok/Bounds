@@ -1,15 +1,13 @@
 import numpy as np
-import time
-from math import exp
 from random import seed
 from ...Methods.sample import confInt
 from ...Methods import readFiles
 from ...Classes.StationaryArrivalStream import StationaryArrivalStream
 from ...Classes.ServiceDistribution import ServiceDistribution
 from ...Classes.SamplePath import SamplePath
-from ...Simulation.boundingSystem import simulate as simUB
+from ...MaxwellIP import MMIP2
 
-networkFile = "15x15//five.txt"
+networkFile = "9x9//four.txt"
 etaFile     = "eta.txt"
 vFile       = "v.txt"
 
@@ -18,11 +16,13 @@ basepath = os.path.dirname(__file__)
 etaPath  = os.path.join(basepath, etaFile) 
 vPath    = os.path.join(basepath, vFile)
 
+# Distribution: ceil(Y), where Y ~ Exponential(1/24)
+T = 1440
+
 # Network, arrival patterns
-T         = 1440
 svcArea   = readFiles.readNetworkFile(networkFile)
 arrStream = StationaryArrivalStream(svcArea, T)
-arrStream.updateP(0.10)
+arrStream.updateP(0.07)
 
 # Service distributions for Maxwell's bounding system 
 svcDists = readFiles.readEtaFile(etaPath)
@@ -34,15 +34,19 @@ with open(vPath, 'r') as f:
 		v[a] = float(line[1])
 
 # Arrival probabilities to be tested
-N     = 100
-seed1 = 12345
-obj   = np.zeros(N)
+N        = 50
+seed1    = 12345
+obj      = np.zeros(N)
+cas      = np.zeros(N)
+settings = {'OutputFlag' : 0}
 	
 seed(seed1)
 # Matt Maxwell's upper bound
 for i in xrange(N):
-	omega   = SamplePath(svcArea, arrStream, svcDists)
-	mxStats = simUB(svcDists, omega, A, v)
-	obj[i]  = mxStats['obj']
+	omega = SamplePath(svcArea, arrStream, svcDists)
+	QM = omega.getQM()
+	momo  = MMIP2.ModelInstance(svcArea, arrStream, omega, v)
+	momo.solve(settings)
+	obj[i] = momo.getObjective()
 
 print 'Maxwell Bound: %.3f +/- %.3f' % confInt(obj)

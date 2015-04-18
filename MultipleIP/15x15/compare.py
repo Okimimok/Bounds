@@ -10,15 +10,14 @@ from ...Classes.StationaryArrivalStream import StationaryArrivalStream
 from ...Classes.ServiceDistribution import ServiceDistribution
 from ...Classes.SamplePath import SamplePath
 from ...Classes.PenaltyMultipliers import PenaltyMultipliers
-from ...Simulation.boundingSystem import simulate as simUB
 from ...Simulation.lowerBound import simulate as simLB
 from ...Simulation.tablePolicies import compliance as simCT
 from ...MultipleIP import PIP2 
 
-networkFile = "15x15//five.txt"
+networkFile = "15x15//fiveV2.txt"
 etaFile     = "eta.txt"
-outputFile	= "compareTest.txt"
-xlsFile     = "compareTest.xlsx"
+outputFile	= "compareV2.txt"
+xlsFile     = "compareV2.xlsx"
 
 import os.path
 basepath = os.path.dirname(__file__)
@@ -49,7 +48,7 @@ penalty.setStepSizes([0.5, 1.0, 2.0, 4.0])
 svcDists = readFiles.readEtaFile(etaPath)
 
 # Arrival probabilities to be tested
-probs = [0.08, 0.09, 0.10]
+probs = [0.10]
 H     = len(probs)
 
 # Compliance table from text file vs. compliance table from MECRP
@@ -65,13 +64,13 @@ for h in xrange(H):
 # seed1 used for calibrating penalty multipliers
 # seed2 used for comparing bounds 
 N        = 500
-iters	 = 4
+iters	 = 3
 seed1	 = 33768
 seed2	 = 12345
 settings = {'OutputFlag' : 0}
 
 # Objective values
-names = ['LowerBd', 'PerfectInfo', 'PenaltyBd', 'MaxwellBd']
+names = ['LowerBd', 'PerfectInfo', 'PenaltyBd']
 obj   = {}
 util  = {}
 for name in names:
@@ -99,11 +98,6 @@ for h in xrange(H):
 
 	for i in xrange(N):
 		omega = SamplePath(svcArea, arrStream, svcDist)
-
-		# Matt Maxwell's upper bound
-		mxStats                 = simUB(svcDists, omega)
-		obj['MaxwellBd'][h][i]  = mxStats['obj']
-		util['MaxwellBd'][h][i] = mxStats['util']
 
 		# Perfect information upper bound
 		m = PIP2.ModelInstance(svcArea, arrStream, omega)

@@ -1,10 +1,9 @@
 import numpy as np
 import time
 from random import seed
-from ...Methods.graph import readNetworkFile, readEtaFile
 from ...Methods.sample import confInt
-from ...Methods import makeXLS
-from ...Methods.gradientSearch import solvePIPs, lineSearch
+from ...Methods import makeXLS, readFiles
+from ...Methods.gradientSearch import fullSearch
 from ...Classes.StationaryArrivalStream import StationaryArrivalStream
 from ...Classes.ServiceDistribution import ServiceDistribution
 from ...Classes.SamplePath import SamplePath
@@ -15,116 +14,81 @@ from ...Simulation.boundingSystem import simulate as simUB
 from ...MultipleIP import PIP2 
 
 networkFile = "9x9//four.txt"
-etaFile     = "9x9//eta.txt"
-outputFile	= "comparetemp.txt"
-xlsFile     = "comparetemp.xlsx"
+etaFile     = "eta.txt"
+vFile       = "v.txt"
+outputFile	= "compareTest.txt"
+xlsFile     = "compareTest.xlsx"
 
 import os.path
 basepath = os.path.dirname(__file__)
 etaPath  = os.path.join(basepath, etaFile) 
 outPath  = os.path.join(basepath, outputFile)
 xlsPath  = os.path.join(basepath, xlsFile)
+vPath    = os.path.join(basepath, vFile)
 
-#####################################################
 # Basic inputs
 T		= 1440
 vals    = np.arange(12, 25, dtype = 'int64')
 probs   = np.ones(13)/13
 svcDist = ServiceDistribution(vals, probs)
 
-#####################################################
 # Network, arrival patterns
-svcArea   = readNetworkFile(networkFile)
+svcArea   = readFiles.readNetworkFile(networkFile)
 arrStream = StationaryArrivalStream(svcArea, T)
 
-#####################################################
 # Penalty Multipliers
 gamma	= np.zeros(T+1)
 penalty = PenaltyMultipliers(gamma)
 penalty.setStepSizes([0.5, 1.0, 2.0, 4.0])
 
-#####################################################
 # Service distributions for Maxwell's bounding system 
-svcDists = readEtaFile(etaFile)
-
-#####################################################
+svcDists = readFiles.readEtaFile(etaPath)
+v        = readFiles.readVFile(vPath)
 # System utilizations tested (for comparing bounds)
-#utils	= [0.04, 0.08, 0.12, 0.16, 0.20, 0.24, 0.28, 0.32]
-utils = [0.06]
+#probs	= [0.04, 0.08, 0.12, 0.16, 0.20, 0.24, 0.28, 0.32]
+probs = [0.10]
+H     = len(probs)
 
-#####################################################
 # Estimate objective value and gradient at current point
 # seed1 used for calibrating penalty multipliers
 # seed2 used for comparing bounds 
-simN     = 10
-gradN    = 10
-lineN    = 10
-iters	 = 1 
+N        = 500
+iters	 = 4 
 seed1	 = 33768
 seed2	 = 12345
 settings = {'OutputFlag' : 0}
 
 # Objective values
-ubObj    = np.zeros((len(utils), simN))
-piObj    = np.zeros((len(utils), simN))
-mxObj    = np.zeros((len(utils), simN))
-lbObj    = np.zeros((len(utils), simN))
+ubObj = np.zeros((H, N))
+piObj = np.zeros((H, N))
+mxObj = np.zeros((H, N))
+lbObj = np.zeros((H, N))
 
 # Utilizations
-ubUtil   = np.zeros((len(utils), simN))
-piUtil   = np.zeros((len(utils), simN))
-mxUtil   = np.zeros((len(utils), simN))
-lbUtil   = np.zeros((len(utils), simN))
+ubUtil   = np.zeros((H, N))
+piUtil   = np.zeros((H, N))
+mxUtil   = np.zeros((H, N))
+lbUtil   = np.zeros((H, N))
 
 start = time.clock()
-for h in xrange(len(utils)):
-	print 'Arrival probability =  %.3f' % utils[h]
-	arrStream.updateP(utils[h])
-	# Gradient Search
-	for i in xrange(iters):
-		print 'Iteration %i' % (i + 1)
-	
-		# Sampling the gradient    
-		print 'Estimating gradient...'
-		gamma = penalty.getGamma()
-		seed(seed1)
-		obj, nabla = solvePIPs(svcArea, arrStream, svcDist, gamma, PIP2,\
-									 settings, gradN, freq=20)
-		penalty.setNabla(nabla)
-
-		print 'Line Search...'
-		seed(seed1)															
-		vals = lineSearch(svcArea, arrStream, svcDist, penalty, PIP2,\
-									 settings, lineN, freq=20) 
-		bestStep = 0
-		bestVal  = np.mean(obj[:lineN])
-		count	 = 0
-			
-		#print 'Step Size 0, Mean Obj. %.4f' % bestVal
-		for j in penalty.getStepSizes():
-			#print 'Step Size %.3f, Mean Obj. %.4f' % (j, vals[count])
-			if vals[count] < bestVal:
-				bestStep = j
-				bestVal  = vals[count]
-			count += 1
-
-		# If step size is zero, take smaller steps. O/w, update gradient.
-		if bestStep == 0:
-			penalty.scaleGamma(0.5)
-		else:
-			penalty.updateGamma(-bestStep*nabla)
+for h in xrange(H):
+	print 'Arrival probability =  %.3f' % probs[h]
+	arrStream.updateP(probs[h])
+	# Gradient search
+	fullSearch(svcArea, arrStream, svcDist, penalty, PIP2, settings, N, seed1, \
+					iters, debug=True)
 
 	# Computing upper and lower bounds on a separate set of sample paths
 	print 'Debiasing...'
 	seed(seed2)
-	for i in xrange(simN):
+	for i in xrange(N):
 		if (i+1)% 20 == 0:
 			print 'Iteration %i' % (i+1)
 
 		omega = SamplePath(svcArea, arrStream, svcDist)
 
 		# Matt Maxwell's upper bound
-		mxStats      = simUB(svcDists, omega)
+		mxStats      = simUB(svcDists, omega, v)
 		mxObj[h][i]  = mxStats['obj']
 		mxUtil[h][i] = mxStats['util']
 
@@ -146,7 +110,7 @@ for h in xrange(len(utils)):
 		ubUtil[h][i] = m.estimateUtilization()	
 
 						 
-	print 'Arrival Probability = %.3f' % utils[h]
+	print 'Arrival Probability = %.3f' % probs[h]
 	print 'Lower Bound         : %.3f +/- %.3f'   % confInt(lbObj[h])
 	print 'Perfect Information : %.3f +/- %.3f'   % confInt(piObj[h])
 	print 'Penalized Bound     : %.3f +/- %.3f'   % confInt(ubObj[h])
@@ -157,10 +121,10 @@ print 'Search took %.4f seconds' % (finish - start)
 
 # Writing results to file
 with open(outPath, 'w') as f:
-	f.write('%i 4\n' % len(utils))
+	f.write('%i 4\n' % H)
 	f.write('LowerBd PerfectInfo PenaltyBd MaxwellBd\n')
-	for h in xrange(len(utils)):
-		f.write('%.3f\n' % utils[h])
+	for h in xrange(H):
+		f.write('%.3f\n' % probs[h])
 		temp1 = confInt(lbObj[h])
 		temp2 = confInt(piObj[h])
 		temp3 = confInt(ubObj[h])

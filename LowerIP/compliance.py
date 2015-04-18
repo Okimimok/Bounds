@@ -30,16 +30,17 @@ def buildTable(svcArea, arrStream, svcDist, w = None):
 	return opt
 
 
-def writeTable(tableFile):
+def writeTable(tableFile, table):
 	basepath  = os.path.dirname(__file__)
 	tablePath = os.path.join(basepath, tableFile) 
+	A         = len(table)
 
 	# Writing table to file
 	with open(tablePath, 'w') as f:
 		f.write('%i\n' % A)
 		for a in xrange(1, A+1):
 			for j in xrange(a):
-				f.write('%i ' % opt[a][j])
+				f.write('%i ' % table[a][j])
 			f.write('\n')
 
 def readTable(tableFile):
