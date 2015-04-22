@@ -1,15 +1,11 @@
 import numpy as np
-from ..Models import MECRP
+from ..Models import MECRP, MEXCRP
 from mmcc import stationaryDist
 
 def buildTable(svcArea, arrStream, svcDist, w):
-	# If none specified, wWeights from steady-state dist of M/M/c/c system
-	lam = arrStream.getArrProb()
-	A   = sum([svcArea.bases[j]['alloc'] for j in svcArea.bases])
-	mu  = 1.0/svcDist.mean
-
 	# Solving the resulting coverage problems
 	settings = {'OutputFlag' : 0, 'MIPGap' : 0.005}
+	A = svcArea.A
 	p = MECRP.ModelInstance(svcArea, arrStream, A, w)
 	p.solve(settings)
 
@@ -20,7 +16,24 @@ def buildTable(svcArea, arrStream, svcDist, w):
 	for a in xrange(1, A+1):
 		table[a] = []
 		for j in svcArea.bases:
-			if v['x'][a][j].x > 1e-6:
+			for k in xrange(int(v['x'][a][j].x)):
+				table[a].append(j)
+
+	return table 
+
+def buildDaskinTable(svcArea, arrStream, svcDist, q, w, settings):
+	A = svcArea.A
+	p = MEXCRP.ModelInstance(svcArea, arrStream, A, q, w)
+	p.solve(settings)
+
+	# Obtaining compliance table
+	table = {}
+	v     = p.getDecisionVars()
+
+	for a in xrange(1, A+1):
+		table[a] = []
+		for j in svcArea.bases:
+			for k in xrange(int(v['x'][a][j].x)):
 				table[a].append(j)
 
 	return table 

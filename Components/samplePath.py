@@ -5,12 +5,13 @@ from bisect import bisect_left
 import numpy as np
 
 class samplePath():
-	def __init__(self, svcArea, arrStream, svcDist=None):
+	def __init__(self, svcArea, arrStream, svcDist=None, mxwDist=None):
 		self.T         = arrStream.T		
 		self.A         = svcArea.A
 		self.svcArea   = svcArea
 		self.arrStream = arrStream
 		self.svcDist   = svcDist
+		self.mxwDist   = mxwDist
 		self.__buildCalls()
 	
 	def __buildCalls(self):
@@ -27,15 +28,14 @@ class samplePath():
 				self.calls[t]		 = {}
 				self.calls[t]['loc'] = callLoc
 				self.calls[t]['rnd'] = r
-
-				# For info relaxed upper bound, one SvcDist object
-				# For Maxwell upper bound, dictionary of these (for various a)
-				try:
+				
+				if self.svcDist is not None:
 					self.calls[t]['svc'] = self.svcDist.sample(r)
-				except:
-					self.calls[t]['svc'] = np.zeros(self.A+1, dtype='int64')
+
+				if self.mxwDist is not None:
+					self.calls[t]['mxw'] = np.zeros(self.A+1, dtype='int64')
 					for a in xrange(self.A+1):
-						self.calls[t]['svc'][a] = self.svcDist[a].sample(r)
+						self.calls[t]['mxw'][a] = self.mxwDist[a].sample(r)
 		
 	def __buildQ(self):
 		# Q[t][j] : Set of dispatch-redeploy decisions (s, k), such that
@@ -78,7 +78,7 @@ class samplePath():
 		for t in times:
 			for a in xrange(1, self.A+1):
 				# Find earliest call time following service completion
-				svc    = self.calls[t]['svc'][a]
+				svc    = self.calls[t]['mxw'][a]
 				finish = t + svc
 				# Don't append if call finishes after last arrival
 				if finish <= last:

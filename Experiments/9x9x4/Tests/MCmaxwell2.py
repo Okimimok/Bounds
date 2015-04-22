@@ -39,7 +39,7 @@ settings = {'OutputFlag' : 0}
 seed(seed1)
 # Matt Maxwell's upper bound
 for i in xrange(N):
-	omega  = samplePath(svcArea, arrStream, svcDists)
+	omega  = samplePath(svcArea, arrStream, mxwDist=svcDists)
 	QM     = omega.getQM()
 	momo   = MMIP2.ModelInstance(svcArea, arrStream, omega, v)
 	momo.solve(settings)

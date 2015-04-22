@@ -8,12 +8,14 @@ from ....Components.serviceDistribution import serviceDistribution
 from ....Components.arrivalStream import arrivalStream
 from ....Components.samplePath import samplePath
 from ....Models import MMIP2
-from ....Simulation.lower import simulate as simLB
-from ....Simulation.policies import nearestEffEmpty
+from ....Simulation.lowerAll import simulate as simLB
+from ....Simulation.tablePolicies import compliance
 
 basePath    = dirname(realpath(__file__))
-networkFile = "four.txt"
+networkFile = "twelve.txt"
+tableFile   = "daskinTable.txt"
 networkPath = abspath(join(basePath, "..//Graph//",  networkFile))
+tablePath   = abspath(join(basePath, "..//Inputs//",  tableFile))
 
 T	    = 1440
 vals    = np.arange(12, 25, dtype = 'int64')
@@ -24,18 +26,29 @@ svcDist = serviceDistribution(vals, probs)
 svcArea   = readNetwork(networkPath)
 A         = svcArea.A
 arrStream = arrivalStream(svcArea, T)
-arrStream.updateP(0.07)
+arrStream.updateP(0.40)
+
+# Reading compliance table
+table  = readTable(tablePath)
 
 # Generating sample paths
 N     = 50
 seed1 = 12345
 obj   = np.zeros(N)
+call  = np.zeros(N)
+late  = np.zeros(N)
+miss  = np.zeros(N)
 seed(seed1)
 for k in xrange(N):
 	omega   = samplePath(svcArea, arrStream, svcDist)
-	lbStats = simLB(svcArea, omega, lambda simState, location, fel, svcArea:\
-				nearestEffEmpty(simState, location, fel, svcArea))
-	obj[k]  = lbStats['obj']
+	stats   = simLB(svcArea, omega, lambda simState, location, fel, svcArea:\
+				compliance(simState, location, fel, svcArea, table))
+	call[k] = len(omega.getCalls())
+	obj[k]  = stats['obj']
+	late[k] = stats['late']
+	miss[k] = stats['miss']
 
-print 'Objective  : %.3f +/- %.3f' % confInt(obj)
-
+print 'Objective    : %.3f +/- %.3f' % confInt(obj)
+print 'Total Calls  : %.3f +/- %.3f' % confInt(call)
+print 'Late Calls   : %.3f +/- %.3f' % confInt(late)
+print 'Missed Calls : %.3f +/- %.3f' % confInt(miss)

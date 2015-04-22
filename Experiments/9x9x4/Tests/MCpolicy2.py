@@ -8,7 +8,7 @@ from ....Components.serviceDistribution import serviceDistribution
 from ....Components.arrivalStream import arrivalStream
 from ....Components.samplePath import samplePath
 from ....Models import MMIP2
-from ....Simulation.lower import simulate as simLB
+from ....Simulation.lowerAll import simulate as simLB
 from ....Simulation.policies import nearestEffEmpty
 
 basePath    = dirname(realpath(__file__))

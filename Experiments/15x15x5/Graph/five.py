@@ -1,10 +1,13 @@
 import numpy as np
-from ..write import bivariateNormalIntegral as bvni
-from ...Networks.write	import heatmap, network
+from os.path import dirname, realpath, join
+from ....Methods.network import writeNetwork, heatmap, bivariateNormalIntegral as bvni	
 
 # Network file location
-networkFile = "15x15//five.txt"
-mapFile		= "15x15//fiveheat.pdf"
+basePath    = dirname(realpath(__file__))
+networkFile = "five.txt"
+heatFile	= "fiveheat.pdf"
+networkPath = join(basePath, networkFile)
+heatPath    = join(basePath, heatFile)
 
 # Size of grid
 nX = 15
@@ -45,5 +48,5 @@ for i in xrange(nX):
 		for k in xrange(len(mu)):
 			P[i][j] += sz[k]*bvni(mu[k], sg[k], (i, j))
 
-network(networkFile, nX, nY, nodeDist, Tresp, P, bases, ambLocs)
-heatmap(networkFile, mapFile, bases, majorAx, minorAx)
+writeNetwork(networkPath, nX, nY, nodeDist, Tresp, P, bases, ambLocs)
+heatmap(networkPath, heatPath, bases, majorAx, minorAx)
