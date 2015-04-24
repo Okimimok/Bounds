@@ -23,7 +23,7 @@ svcDist = serviceDistribution(vals, probs)
 # Network, arrival patterns
 svcArea   = readNetwork(networkPath)
 arrStream = arrivalStream(svcArea, T)
-arrStream.updateP(0.08)
+arrStream.updateP(0.02)
 
 # Penalty 
 gamma   = np.zeros(T+1)

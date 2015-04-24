@@ -16,7 +16,7 @@ from ...Simulation.tablePolicies import compliance
 from ...Models import PIP2, MMIP2
 
 basePath	= dirname(realpath(__file__))
-networkFile = "twelve.txt"
+networkFile = "five.txt"
 etaFile		= "eta.txt"
 vFile		= "v.txt"
 outputFile	= "compare.txt"
@@ -50,17 +50,17 @@ v		 = readV(vPath)
 table = readTable(tablePath)
 
 # Arrival probabilities tested (for comparing bounds)
-probs = [0.350]
-#probs = [0.20, 0.25, 0.30, 0.35, 0.40]
+probs = [0.01, 0.02, 0.03]
 H	  = len(probs)
 
 # seed1 used for calibrating penalty
 # seed2 used for comparing bounds 
-N		 = 500
-iters	 = 3 
-seed1	 = 33768
-seed2	 = 12345
-settings = {'OutputFlag' : 0}
+N		  = 1000
+iters	  = 5 
+seed1	  = 33768
+seed2	  = 12345
+settings  = {'OutputFlag' : 0}
+settings2 = {'OutputFlag' : 0, 'TimeLimit' : 120}
 
 # Summary statistics
 lb = {'obj': np.zeros((H,N)), 'util': np.zeros((H,N)),\
@@ -75,7 +75,7 @@ for h in xrange(H):
 	arrStream.updateP(probs[h])
 	# Gradient search
 	fastFullSearch(svcArea, arrStream, svcDist, penalty, PIP2, settings, N,
-							 seed1, iters, freq = 10)
+							 seed1, iters, freq = 50)
 
 	# Computing upper and lower bounds on a separate set of sample paths
 	print 'Debiasing...'
@@ -84,8 +84,10 @@ for h in xrange(H):
 		omega  = samplePath(svcArea, arrStream, svcDist, mxwDists)
 
 		m = MMIP2.ModelInstance(svcArea, arrStream, omega, v)
-		m.solve(settings)
+		m.solve(settings2)
 		mx['obj'][h][i] = m.getObjective()
+		if m.getModel().Status == 9:
+			print 'Time limit reached, gap %.4f' % (100*m.getModel().MIPGap)
 
 		lbStats = simLB(svcArea, omega, lambda simState, location, fel, svcArea:\
 				compliance(simState, location, fel, svcArea, table))
@@ -115,16 +117,17 @@ print 'Search took %.4f seconds' % (finish - start)
 # Writing results to file
 with open(outputPath, 'w') as f:
 	f.write('%i 4\n' % H)
-	f.write('LowerBd PerfectInfo PenaltyBd MaxwellBd\n')
 	for h in xrange(H):
 		f.write('%.3f\n' % probs[h])
 		temp1 = confInt(lb['obj'][h])
 		temp2 = confInt(pi['obj'][h])
 		temp3 = confInt(ub['obj'][h])
 		temp4 = confInt(mx['obj'][h])
-		f.write('%.3f %.3f %.3f %.3f %.3f\n' % (temp1[0], temp1[1],\
+		f.write('Lower Bound %.3f %.3f %.3f %.3f %.3f\n' % (temp1[0], temp1[1],\
 					np.average(lb['util'][h]), np.average(lb['late'][h]),\
 					np.average(lb['miss'][h])))
-		f.write('%.3f %.3f %.3f\n' % (temp2[0], temp2[1], np.average(pi['util'][h])))
-		f.write('%.3f %.3f %.3f\n' % (temp3[0], temp3[1], np.average(ub['util'][h])))
-		f.write('%.3f %.3f\n' % (temp4[0], temp4[1]))
+		f.write('PerfectInfo %.3f %.3f %.3f\n' % (temp2[0], temp2[1],\
+						 np.average(pi['util'][h])))
+		f.write('PenaltyBd   %.3f %.3f %.3f\n' % (temp3[0], temp3[1],\
+						 np.average(ub['util'][h])))
+		f.write('MaxwellBd   %.3f %.3f\n' % (temp4[0], temp4[1]))

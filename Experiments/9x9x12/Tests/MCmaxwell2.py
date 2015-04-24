@@ -24,17 +24,17 @@ T = 1440
 svcArea   = readNetwork(networkPath)
 A         = svcArea.A
 arrStream = arrivalStream(svcArea, T)
-arrStream.updateP(0.25)
+arrStream.updateP(0.35)
 
 # Service distributions for Maxwell's bounding system 
 svcDists = readEta(etaPath)
 v        = readV(vPath) 
 
 # Arrival probabilities to be tested
-N        = 50
-seed1    = 12345
+N        = 1
+seed1    = 67890
 obj      = np.zeros(N)
-settings = {'OutputFlag' : 0}
+settings = {'OutputFlag' : 1, 'MIPGap': 0.001, 'TimeLimit': 1}
 	
 seed(seed1)
 # Matt Maxwell's upper bound
@@ -44,5 +44,6 @@ for i in xrange(N):
 	momo   = MMIP2.ModelInstance(svcArea, arrStream, omega, v)
 	momo.solve(settings)
 	obj[i] = momo.getObjective()
+	print momo.getModel().Status, momo.getModel().MIPGap
 
 print 'Maxwell Bound: %.3f +/- %.3f' % confInt(obj)

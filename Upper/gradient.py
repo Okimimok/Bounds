@@ -71,6 +71,7 @@ def fastFullSearch(svcArea, arrStream, svcDist, penalty, IP, settings, N,\
 	seed(randSeed)
 
 	for j in xrange(N):
+		if freq > 0 and (j + 1) % freq == 0 : print '  Path %i' % (j+1)
 		omega  = samplePath(svcArea, arrStream, svcDist)
 		m      = IP.ModelInstance(svcArea, arrStream, omega)
 		m.updateObjective(gamma)
@@ -91,6 +92,7 @@ def fastFullSearch(svcArea, arrStream, svcDist, penalty, IP, settings, N,\
 
 		if debug: print '   Step Size 0, Mean Obj. %.4f' % bestVal
 		for j in xrange(N):
+			if freq > 0 and (j + 1) % freq == 0 : print '  Path %i' % (j+1)
 			# Generate sample path, create skeleton of IP
 			omega = samplePath(svcArea, arrStream, svcDist)
 			m     = IP.ModelInstance(svcArea, arrStream, omega)

@@ -26,7 +26,7 @@ svcDist = serviceDistribution(vals, probs)
 # Network, arrival patterns
 svcArea   = readNetwork(networkPath)
 arrStream = arrivalStream(svcArea, T)
-arrStream.updateP(0.08)
+arrStream.updateP(0.02)
 
 # Penalty Multipliers
 gamma	= np.zeros(T+1)
@@ -34,20 +34,18 @@ penalty = coveragePenalty(gamma)
 penalty.setStepSizes([0.5, 1.0, 2.0, 4.0])
 
 # Estimate objective value and gradient at current point
-N     = 50
-N2    = 50
-iters = 1
+N     = 1000 
+iters = 5
 seed1 = 33768
 seed2 = 12345
 settings = {'OutputFlag' : 0}
 
 start = time.clock()
 fastFullSearch(svcArea, arrStream, svcDist, penalty, PIP2, settings, N,\
-							seed1, iters, freq=-1, debug=True)
+							seed1, iters, freq=50, debug=True)
 print 'Search took %.3f seconds' % (time.clock()-start)
-print penalty.getGamma()
 # Upon termination, sample the objective value at the point selected
 print 'Debiasing...'	
 seed(seed2) 
-obj, _ = solvePIPs(svcArea, arrStream, svcDist, gamma, PIP2, settings, N2)
+obj, _ = solvePIPs(svcArea, arrStream, svcDist, gamma, PIP2, settings, N, freq=50)
 print 'Final upper bound: %.4f +/- %.4f' % confInt(obj)

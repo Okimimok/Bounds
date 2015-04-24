@@ -1,0 +1,11 @@
+2 4
+0.010
+Lower Bound 6.608 0.042 0.049 7.844 0.000
+PerfectInfo 12.946 0.068 0.049
+PenaltyBd   12.267 0.061 0.047
+MaxwellBd   6.529 0.028
+0.030
+Lower Bound 17.515 0.065 0.158 25.525 0.046
+PerfectInfo 40.726 0.111 0.156
+PenaltyBd   29.869 0.061 0.142
+MaxwellBd   17.558 0.039

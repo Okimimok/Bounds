@@ -7,7 +7,6 @@ from ....Lower.compliance import readTable
 from ....Components.serviceDistribution import serviceDistribution
 from ....Components.arrivalStream import arrivalStream
 from ....Components.samplePath import samplePath
-from ....Models import MMIP2
 from ....Simulation.lowerAll import simulate as simLB
 from ....Simulation.tablePolicies import compliance
 

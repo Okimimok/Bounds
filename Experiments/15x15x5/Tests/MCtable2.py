@@ -26,7 +26,7 @@ svcDist = serviceDistribution(vals, probs)
 svcArea   = readNetwork(networkPath)
 A         = svcArea.A
 arrStream = arrivalStream(svcArea, T)
-arrStream.updateP(0.08)
+arrStream.updateP(0.02)
 
 # Reading compliance table
 table  = readTable(tablePath)
