@@ -1,6 +1,4 @@
-import numpy as np
 from ..Models import MECRP, MEXCRP
-from mmcc import stationaryDist
 
 def buildTable(svcArea, arrStream, svcDist, w):
 	# Solving the resulting coverage problems
@@ -13,10 +11,10 @@ def buildTable(svcArea, arrStream, svcDist, w):
 	table = {}
 	v     = p.getDecisionVars()
 
-	for a in xrange(1, A+1):
+	for a in range(1, A+1):
 		table[a] = []
 		for j in svcArea.bases:
-			for k in xrange(int(v['x'][a][j].x)):
+			for k in range(int(v['x'][a][j].x)):
 				table[a].append(j)
 
 	return table 
@@ -30,10 +28,10 @@ def buildDaskinTable(svcArea, arrStream, svcDist, q, w, settings):
 	table = {}
 	v     = p.getDecisionVars()
 
-	for a in xrange(1, A+1):
+	for a in range(1, A+1):
 		table[a] = []
 		for j in svcArea.bases:
-			for k in xrange(int(v['x'][a][j].x)):
+			for k in range(int(v['x'][a][j].x)):
 				table[a].append(j)
 
 	return table 
@@ -43,8 +41,8 @@ def writeTable(table, tablePath):
 	A = len(table)
 	with open(tablePath, 'w') as f:
 		f.write('%i\n' % A)
-		for a in xrange(1, A+1):
-			for j in xrange(a):
+		for a in range(1, A+1):
+			for j in range(a):
 				f.write('%i ' % table[a][j])
 			f.write('\n')
 
@@ -57,7 +55,7 @@ def readTable(tablePath):
 	table = {}
 	with open(tablePath, 'r') as f:
 		A = int(f.readline())
-		for a in xrange(1, A+1):
+		for a in range(1, A+1):
 			table[a] = [int(i) for i in f.readline().split()]
 
 	return table

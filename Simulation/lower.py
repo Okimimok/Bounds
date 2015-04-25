@@ -1,16 +1,16 @@
-from FutureEventsList import FutureEventsList
+from .FutureEventsList import FutureEventsList
 		
-def simulate(svcArea, omega, executeService, debug = False):
+def simulate(svca, omega, executeService, debug = False):
 	# executeService a function handle that takes as input
 	#  
 	# 1) state : Simulation state
 	# 2) location : The location at which a service completion occurs
 	# 3) fel	  : Future events list
-	# 4) svcArea  : Object containing network data (distances, neighbor-
+	# 4) svca  : Object containing network data (distances, neighbor-
 	#				 hoods, locations, etc.)
 	# and then selects a base to which to redeploy the ambulance
 	
-	bases = svcArea.getBases()
+	bases = svca.getBases()
 	calls = omega.getCalls()
 	C	  = len(calls)
 	times = sorted(calls.keys())
@@ -54,7 +54,7 @@ def simulate(svcArea, omega, executeService, debug = False):
 			if len(tmp) > 0:
 				output = ''
 				for svc in tmp:
-					tmpLoc = str(svcArea.nodes[svc[2]]['loc'])
+					tmpLoc = str(svca.nodes[svc[2]]['loc'])
 					tmp += tmpLoc + ' <' + str(int(svc[0])) + '> '
 				print('Pending service completions: %s' % output)
 			else:
@@ -81,15 +81,15 @@ def simulate(svcArea, omega, executeService, debug = False):
 
 		# Execute relevant event					 
 		if eventType == 'arrival':
-			executeArrival(state, stats, nextEvent[2], fel, svcArea)
+			executeArrival(state, stats, nextEvent[2], fel, svca)
 			c += 1
 			if c < C: fel.addEvent(times[c], 'arrival', (locs[c], svcs[c]), 1)
 			
 		elif eventType == 'service':
-			executeService(state, nextEvent[2], fel, svcArea)
+			executeService(state, nextEvent[2], fel, svca)
 			
 		elif eventType == 'redeployment':
-			executeRedeployment(state, nextEvent[2], svcArea)
+			executeRedeployment(state, nextEvent[2], svca)
 			
 		if state['debug']: print('')
 	
@@ -100,11 +100,11 @@ def simulate(svcArea, omega, executeService, debug = False):
 	stats['util'] = stats['busy']/(1.0*T*state['A'])
 	return stats
 			
-def executeArrival(state, stats, callInfo, fel, svcArea):
-	nodes = svcArea.getNodes()
-	bases = svcArea.getBases()
-	B	  = svcArea.getB()
-	dist  = svcArea.getDist()
+def executeArrival(state, stats, callInfo, fel, svca):
+	nodes = svca.getNodes()
+	bases = svca.getBases()
+	B	  = svca.getB()
+	dist  = svca.getDist()
 	
 	# Call info
 	loc = callInfo[0]
@@ -133,8 +133,8 @@ def executeArrival(state, stats, callInfo, fel, svcArea):
 		stats['miss'] += 1
 		if state['debug']: print('Call lost\n%i missed calls' % stats['miss'])
 		
-def executeRedeployment(state, base, svcArea):
-	bases = svcArea.bases
+def executeRedeployment(state, base, svca):
+	bases = svca.bases
 	
 	# Increment by one the number of ambulances available at destination
 	state['ambs'][base] += 1

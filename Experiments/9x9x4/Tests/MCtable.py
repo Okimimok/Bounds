@@ -1,44 +1,56 @@
-import numpy as np 
+import sys
+import configparser
+import numpy as np
 from random import seed
 from ....Methods.network import readNetwork	
 from os.path import abspath, dirname, realpath, join
 from ....Methods.sample import confInt
 from ....Lower.compliance import readTable
-from ....Components.serviceDistribution import serviceDistribution
-from ....Components.arrivalStream import arrivalStream
-from ....Components.samplePath import samplePath
+from ....Components.SvcDist import SvcDist
+from ....Components.ArrStream import ArrStream
+from ....Components.SamplePath import SamplePath
 from ....Simulation.lowerAll import simulate as simLB
 from ....Simulation.tablePolicies import compliance
+#import pdb; pdb.set_trace()
 
-basePath    = dirname(realpath(__file__))
-networkFile = "four.txt"
-tableFile   = "table.txt"
-networkPath = abspath(join(basePath, "..//Graph//",  networkFile))
-tablePath   = abspath(join(basePath, "..//Inputs//",  tableFile))
+def main():
+	basePath    = dirname(realpath(__file__))
+	configPath  = abspath(join(basePath, sys.argv[1]))
+	cp          = configparser.ConfigParser()
 
-T	    = 1440
-vals    = np.arange(12, 25, dtype = 'int64')
-probs   = np.ones(13)/13
-svcDist = serviceDistribution(vals, probs)
+	cp.read(configPath)
+	networkFile = cp['files']['networkFile']
+	tableFile   = cp['files']['tableFile']
+	networkPath = abspath(join(basePath, "..//Graph//",  networkFile))
+	tablePath   = abspath(join(basePath, "..//Inputs//",  tableFile))
 
-# Network, arrival patterns
-svcArea   = readNetwork(networkPath)
-A         = svcArea.A
-arrStream = arrivalStream(svcArea, T)
-arrStream.updateP(0.07)
+	# Basic inputs
+	seed1 = cp['inputs'].getint('seed1')
+	T     = cp['inputs'].getint('T')
+	N     = cp['inputs'].getint('N')
+	prob  = cp['inputs'].getfloat('prob')
 
-# Reading compliance table
-table  = readTable(tablePath)
+	# Service distribution
+	vals  = np.arange(12, 25, dtype = 'int64')
+	probs = np.ones(13)/13
+	sdist = SvcDist(vals, probs)
 
-# Generating sample paths
-N     = 50
-seed1 = 12345
-obj   = np.zeros(N)
-seed(seed1)
-for k in xrange(N):
-	omega   = samplePath(svcArea, arrStream, svcDist)
-	lbStats = simLB(svcArea, omega, lambda simState, location, fel, svcArea:\
-				compliance(simState, location, fel, svcArea, table))
-	obj[k]  = lbStats['obj']
+	# System components: network, arrival patterns, penalty
+	svca = readNetwork(networkPath)
+	astr = ArrStream(svca, T)
+	astr.updateP(prob)
 
-print 'Objective  : %.3f +/- %.3f' % confInt(obj)
+	# Reading compliance table
+	table  = readTable(tablePath)
+	obj   = np.zeros(N)
+	seed(seed1)
+	for i in range(N):
+		omega   = SamplePath(svca, astr, svcDist=sdist)
+		lbStats = simLB(svca, omega, lambda state, location, fel, svcArea:\
+					compliance(simState, location, fel, svcArea, table))
+		obj[k]  = lbStats['obj']
+
+	print('Objective  : %.3f +/- %.3f' % confInt(obj))
+
+if __name__ == '__main__':
+	main()
