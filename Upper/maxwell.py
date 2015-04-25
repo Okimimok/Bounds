@@ -1,6 +1,6 @@
 import numpy as np
 from ..Models import MMIP, MCLP
-from ..Components.serviceDistribution import serviceDistribution
+from ..Components.SvcDist import SvcDist
 
 def buildEta(svcArea, arrStream, svcDist, filePath, debug=False):
 	# Construct dominating service time distributions by solving a sequence
@@ -21,9 +21,9 @@ def buildEta(svcArea, arrStream, svcDist, filePath, debug=False):
 	eta      = np.zeros((maxR+1, maxA+1))
 	settings = {'OutputFlag': 0, 'MIPGap': 0.005}
 
-	for r in xrange(maxR + 1):
-		for a in xrange(1, maxA+1):
-			if debug: print 'r : %i of %i, a : %i of %i' % (r, maxR, a, maxA)
+	for r in range(maxR + 1):
+		for a in range(1, maxA+1):
+			if debug: print('r : %i of %i, a : %i of %i' % (r, maxR, a, maxA))
 
 			p = MMIP.ModelInstance(svcArea, arrStream, svcDist, a, r)
 			p.solve(settings)
@@ -39,7 +39,7 @@ def buildV(svcArea, arrStream, settings=None):
 	if settings is None:
 		settings  = {'OutputFlag' : 0}
 
-	for a in xrange(1, A+1):
+	for a in range(1, A+1):
 		p = MCLP.ModelInstance(svcArea, arrStream, a)
 		p.solve(settings)
 		v[a] = p.getObjective()
@@ -56,7 +56,7 @@ def writeEta(eta, etaPath):
 		f.write('%i %i\n' % (numR, numA))
 		fmtString = '%.4f ' * (numA-1) + '%.4f\n'
 
-		for r in xrange(numR):
+		for r in range(numR):
 			f.write(fmtString  % tuple(abs(eta[r])))
 
 def writeV(v, vPath):
@@ -64,7 +64,7 @@ def writeV(v, vPath):
 	tmp = len(v)
 	with open(vPath, 'w') as f:
 		f.write('%i\n' % tmp)
-		for a in xrange(tmp):
+		for a in range(tmp):
 			f.write('%i %.4f\n' % (a, v[a]))
 
 def readEta(etaPath):
@@ -77,15 +77,15 @@ def readEta(etaPath):
 		vals  = np.arange(1, R)
 		cdfs  = np.empty((M, R))
 	
-		for r in xrange(R):
+		for r in range(R):
 			line = f.readline().split()
-			for m in xrange(M):
+			for m in range(M):
 				cdfs[m][r] = float(line[m])
 
 	svcDists = {}
-	for m in xrange(M):
+	for m in range(M):
 		pmf = cdfs[m][1:] - cdfs[m][:R-1]
-		svcDists[m] = serviceDistribution(vals, pmf)
+		svcDists[m] = SvcDist(vals, pmf)
 
 	return svcDists
 
@@ -93,7 +93,7 @@ def readV(vPath):
 	with open(vPath, 'r') as f:
 		tmp = int(f.readline()) 
 		v   = np.zeros(tmp)
-		for a in xrange(tmp):	
+		for a in range(tmp):	
 			line = f.readline().split()
 			v[a] = float(line[1])
 

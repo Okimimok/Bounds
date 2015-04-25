@@ -1,64 +1,68 @@
-import numpy as np
+import sys
+import configparser
+import numpy as np 
 import time
 from random import seed
-from ....Methods.network import readNetwork	
 from os.path import abspath, dirname, realpath, join
+from ....Methods.network import readNetwork	
 from ....Methods.sample import confInt
-from ....Upper.maxwell import readEta, readV
-from ....Components.serviceDistribution import serviceDistribution
-from ....Components.coveragePenalty import coveragePenalty
-from ....Components.arrivalStream import arrivalStream
-from ....Components.samplePath import samplePath
-from ....Upper.gradient import fastFullSearch, fastSearch, fullSearch, solvePIPs
+from ....Components.SvcDist import SvcDist
+from ....Components.ArrStream import ArrStream
+from ....Components.CvgPenalty import CvgPenalty
+from ....Upper.gradient import fullSearch, solvePIPs
 from ....Models import PIP2
 
-basePath    = dirname(realpath(__file__))
-networkFile = "four.txt"
-networkPath = abspath(join(basePath, "..//Graph//",  networkFile))
+def main():
+	basePath   = dirname(realpath(__file__))
+	configPath = abspath(join(basePath, sys.argv[1]))
+	cp         = configparser.ConfigParser()
+	cp.read(configPath)
 
-# Distribution: ceil(Y), where Y ~ Exponential(1/24)
-T	    = 1440
+	networkFile = cp['files']['networkFile']
+	networkPath = abspath(join(basePath, "..//Graph//",  networkFile))
 
-# Basic inputs
-vals    = np.arange(12, 25, dtype = 'int64')
-probs   = np.ones(13)/13
-svcDist = serviceDistribution(vals, probs)
+    # Basic inputs
+	seed1 = cp['inputs'].getint('seed1')
+	seed2 = cp['inputs'].getint('seed2')
+	T     = cp['inputs'].getint('T')
+	N     = cp['inputs'].getint('N')
+	prob  = cp['inputs'].getfloat('prob')
+	iters = cp['inputs'].getint('iters')
+	steps = eval(cp['inputs']['steps'])
+        
+	# Service distribution    
+	vals  = np.arange(12, 25, dtype = 'int64')
+	probs = np.ones(13)/13
+	sdist = SvcDist(vals, probs)
+ 
+	# System components: network, arrival patterns, penalty
+	svca = readNetwork(networkPath)
+	astr = ArrStream(svca, T)
+	astr.updateP(prob)
 
-# Network, arrival patterns
-svcArea   = readNetwork(networkPath)
-arrStream = arrivalStream(svcArea, T)
-arrStream.updateP(0.07)
+	# Penalty Multipliers
+	gamma	= np.zeros(T+1)
+	penalty = CvgPenalty(gamma)
+	penalty.setStepSizes(steps)
+	
+	# Solver settings    
+	settings = {}
+	for item in cp['settings']:
+		settings[item] = eval(cp['settings'][item])
+		
+	# Displaying progress
+	debug = cp['log'].getboolean('debug')
+	freq  = cp['log'].getint('freq')
+	if freq < 0: freq = N+1
 
-# Penalty Multipliers
-gamma	= np.zeros(T+1)
-penalty = coveragePenalty(gamma)
-penalty.setStepSizes([0.5, 1.0, 2.0, 4.0])
-
-# Estimate objective value and gradient at current point
-N     = 40
-iters = 2
-seed1 = 33768
-seed2 = 12345
-settings = {'OutputFlag' : 0}
-
-print 'Slower gradient search...'
-start = time.clock()
-#fastFullSearch(svcArea, arrStream, svcDist, penalty, PIP2, settings, N,\
-#							seed1, iters, freq=-1, debug=True)
-fullSearch(svcArea, arrStream, svcDist, penalty, PIP2, settings, N,\
-							seed1, iters, freq=-1, debug=True)
-print 'Search took %.3f seconds' % (time.clock()-start)
-'''
-print 'Faster gradient search...'
-start = time.clock()
-fastSearch(svcArea, arrStream, svcDist, penalty, PIP2, settings, N,\
-							seed1, iters, freq=-1, debug=True)
-print 'Search took %.3f seconds' % (time.clock()-start)
-'''
-'''
-# Upon termination, sample the objective value at the point selected
-print 'Debiasing...'	
-seed(seed2) 
-obj, _ = solvePIPs(svcArea, arrStream, svcDist, gamma, PIP2, settings, N)
-print 'Final upper bound: %.4f +/- %.4f' % confInt(obj)
-'''
+	start = time.clock()
+	fullSearch(svca, astr, sdist, penalty, PIP2, settings, N, seed1, iters,\
+							 freq=freq, debug=debug)
+	print('Search took %.4f seconds' % (time.clock()-start))
+	print('Debiasing...')
+	seed(seed2) 
+	obj, _ = solvePIPs(svca, astr, sdist, gamma, PIP2, settings, N, freq=freq)
+	print('Final upper bound: %.4f +/- %.4f' % confInt(obj))
+	
+if __name__ == '__main__':
+    main()

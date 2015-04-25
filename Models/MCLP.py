@@ -1,5 +1,4 @@
 from gurobipy import Model, GRB, LinExpr 
-import numpy as np
 
 class ModelInstance:
 	# The maximum coverage location problem of Church and ReVelle (1971)
@@ -45,11 +44,13 @@ class ModelInstance:
 		self.v = {'x' : x, 'y' : y}
 
 	def solve(self, settings={}):	
-		if 'OutputFlag' in settings:
-			self.m.setParam('OutputFlag', settings['OutputFlag'])
+		for key in settings:
+			if key.lower() == 'outputflag':
+				self.m.setParam(key, settings[key])
+				break
 
-		for option in settings:
-			self.m.setParam(option, settings[option])
+		for key in settings:
+			self.m.setParam(key, settings[key])
 
 		self.m.modelSense = GRB.MAXIMIZE
 		self.m.optimize()

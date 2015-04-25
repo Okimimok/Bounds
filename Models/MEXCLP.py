@@ -1,5 +1,4 @@
 from gurobipy import Model, GRB, LinExpr 
-import numpy as np
 
 class ModelInstance:
 	# q is a systemwide busy probability
@@ -40,7 +39,7 @@ class ModelInstance:
 			exprY = LinExpr()
 			for j in self.B[i]:
 				exprX.add(x[j], 1)
-			for k in xrange(1, self.A+1):
+			for k in range(1, self.A+1):
 				exprY.add(y[i][k], 1)
 			self.m.addConstr(exprX >= exprY)
 	
@@ -54,11 +53,13 @@ class ModelInstance:
 		self.v = {'x' : x, 'y' : y}
 
 	def solve(self, settings={}):	
-		if 'OutputFlag' in settings:
-			self.m.setParam('OutputFlag', settings['OutputFlag'])
+		for key in settings:
+			if key.lower() == 'outputflag':
+				self.m.setParam(key, settings[key])
+				break
 
-		for option in settings:
-			self.m.setParam(option, settings[option])
+		for key in settings:
+			self.m.setParam(key, settings[key])
 
 		self.m.modelSense = GRB.MAXIMIZE
 		self.m.optimize()

@@ -1,5 +1,5 @@
 import numpy as np
-from ..Components.samplePath import samplePath
+from ..Components.SamplePath import SamplePath
 from random import seed
 
 # Methods that can be used to perform a gradient search with respect
@@ -7,9 +7,9 @@ from random import seed
 
 
 # Faster gradient search, that stores every model created to memory, so that
-#	repeated reformulation not necessary
-def fastSearch(svcArea, arrStream, svcDist, penalty, IP, settings, N,\
-											randSeed, iters, freq=-1, debug=False):
+#	repeated reformulation not necessary. Uses ENORMOUS amounts of memory
+def fastSearch(svca, astr, sdist, penalty, IP, settings, N, randSeed, iters,\
+							 freq=-1, debug=False):
 	models = {}
 	seed(randSeed)
 
@@ -17,17 +17,18 @@ def fastSearch(svcArea, arrStream, svcDist, penalty, IP, settings, N,\
 	obj   = 0
 	gamma = penalty.getGamma()
 	nabla = np.zeros(gamma.shape)
-	print 'Initialization...'
-	for j in xrange(N):
-		omega     = samplePath(svcArea, arrStream, svcDist)
-		models[j] = IP.ModelInstance(svcArea, arrStream, omega)
+	print('Initialization...')
+	
+	for j in range(N):
+		omega     = SamplePath(svca, astr, sdist)
+		models[j] = IP.ModelInstance(svca, astr, omega)
 		models[j].updateObjective(gamma)
 		models[j].solve(settings)
 		obj   += models[j].getObjective()/N
 		nabla += models[j].estimateGradient()/N
 
-	for i in xrange(iters):
-		if debug: print 'Line search, iteration %i' % (i + 1)
+	for i in range(iters):
+		if debug: print('Line search, iteration %i' % (i + 1))
 		
 		# Line search
 		cands    = {}
@@ -35,19 +36,20 @@ def fastSearch(svcArea, arrStream, svcDist, penalty, IP, settings, N,\
 		bestVal  = obj
 		bestGrad = np.array(nabla)
 
-		if debug: print '        Step Size 0, Obj. %.4f' % bestVal
+		if debug: print('  Step Size 0, Obj. %.4f' % bestVal)
 
 		for step in penalty.getStepSizes():
 			cands[step] = {'val': 0.0, 'grad': np.zeros(gamma.shape)}
 			tmp         = gamma - step*nabla
-			for j in xrange(N):
+			for j in range(N):
 				models[j].updateObjective(tmp)
 				models[j].solve(settings)
 				cands[step]['val']  += models[j].getObjective()/N
 				cands[step]['grad'] += models[j].estimateGradient()/N
 			
 			if debug:
-				 print '        Step Size %.3f, Obj. %.4f' %  (step, cands[step]['val'])
+				 print('  Step Size %.3f, Obj. %.4f' %\
+											(step, cands[step]['val']))
 			if cands[step]['val'] < bestVal:
 				bestStep = step 
 				bestVal  = cands[step]['val']
@@ -62,25 +64,25 @@ def fastSearch(svcArea, arrStream, svcDist, penalty, IP, settings, N,\
 			obj   = bestVal
 
 # Gradient search
-def fastFullSearch(svcArea, arrStream, svcDist, penalty, IP, settings, N,\
-											randSeed, iters, freq=-1, debug=False):
-	print 'Initialization...'
+def fullSearch(svca, astr, sdist, penalty, IP, settings, N, randSeed,\
+						 iters, freq=-1, debug=False):
+	print('Initialization...')
 	gamma = penalty.getGamma()
 	obj   = 0
 	nabla = np.zeros(gamma.shape)
 	seed(randSeed)
 
-	for j in xrange(N):
-		if freq > 0 and (j + 1) % freq == 0 : print '  Path %i' % (j+1)
-		omega  = samplePath(svcArea, arrStream, svcDist)
-		m      = IP.ModelInstance(svcArea, arrStream, omega)
+	for j in range(N):
+		if freq > 0 and (j + 1) % freq == 0 : print('  Path %i' % (j+1))
+		omega  = SamplePath(svca, astr, sdist)
+		m      = IP.ModelInstance(svca, astr, omega)
 		m.updateObjective(gamma)
 		m.solve(settings)
 		obj   += m.getObjective()/N
 		nabla += m.estimateGradient()/N													
 
-	for i in xrange(iters):
-		if debug: print 'Iteration %i' % (i+1)
+	for i in range(iters):
+		if debug: print('Line Search, Iteration %i' % (i+1))
 		cands    = {}
 		bestStep = 0.0
 		bestVal  = obj
@@ -90,12 +92,12 @@ def fastFullSearch(svcArea, arrStream, svcDist, penalty, IP, settings, N,\
 		for step in penalty.getStepSizes():
 			cands[step] = {'val': 0.0, 'grad': np.zeros(gamma.shape)}
 
-		if debug: print '   Step Size 0, Mean Obj. %.4f' % bestVal
-		for j in xrange(N):
-			if freq > 0 and (j + 1) % freq == 0 : print '  Path %i' % (j+1)
+		if debug: print('  Step Size 0, Mean Obj. %.4f' % bestVal)
+		for j in range(N):
+			if freq > 0 and (j + 1) % freq == 0 : print('  Path %i' % (j+1))
 			# Generate sample path, create skeleton of IP
-			omega = samplePath(svcArea, arrStream, svcDist)
-			m     = IP.ModelInstance(svcArea, arrStream, omega)
+			omega = SamplePath(svca, astr, sdist)
+			m     = IP.ModelInstance(svca, astr, omega)
 
 			# Set of multipliers being evaluated
 			for step in penalty.getStepSizes():
@@ -105,7 +107,8 @@ def fastFullSearch(svcArea, arrStream, svcDist, penalty, IP, settings, N,\
 				cands[step]['grad'] += m.estimateGradient()/N
 			
 		for step in penalty.getStepSizes():
-			if debug: print '   Step Size %.3f, Obj. %.4f' %  (step, cands[step]['val'])
+			if debug: print('  Step Size %.3f, Obj. %.4f' %\
+									(step, cands[step]['val']))
 			if cands[step]['val'] < bestVal:
 				bestStep = step 
 				bestVal  = cands[step]['val']
@@ -119,39 +122,7 @@ def fastFullSearch(svcArea, arrStream, svcDist, penalty, IP, settings, N,\
 			nabla = np.array(bestGrad)
 			obj   = bestVal
 
-# Gradient search
-def fullSearch(svcArea, arrStream, svcDist, penalty, IP, settings, N,\
-											randSeed, iters, freq=-1, debug=False):
-	for i in xrange(iters):
-		if debug: print 'Iteration %i\n    Estimating gradient...' % (i + 1)
-		gamma = penalty.getGamma()
-		seed(randSeed)
-		obj, nabla = solvePIPs(svcArea, arrStream, svcDist, gamma, IP, settings, N, freq)
-		penalty.setNabla(nabla) 
-		
-		if debug: print '    Line Search...'
-
-		seed(randSeed)															
-		vals = lineSearch(svcArea, arrStream, svcDist, penalty, IP, settings, N, freq) 
-		bestStep = 0
-		bestVal  = np.mean(obj[:N])
-		count	 = 0
-			
-		if debug: print '        Step Size 0, Mean Obj. %.4f' % bestVal
-		for j in penalty.getStepSizes():
-			if debug: print '        Step Size %.3f, Mean Obj. %.4f' % (j, vals[count])
-			if vals[count] < bestVal:
-				bestStep = j
-				bestVal  = vals[count]
-			count += 1
-
-		# If step size is zero, take smaller steps. O/w, update gradient.
-		if bestStep == 0:
-			penalty.scaleStepSizes(0.5)
-		else:
-			penalty.updateGamma(-bestStep*nabla)
-
-def solvePIPs(svcArea, arrStream, svcDist, gamma, IP, settings, N, freq=-1):
+def solvePIPs(svca, astr, sdist, gamma, IP, settings, N, freq=-1):
 	# Solves N instances of the IP corresponding to different sample 
 	#	 paths. Outputs the objective value attained in every problem
 	#	 instance, as well as an estimate of the gradient.
@@ -162,12 +133,12 @@ def solvePIPs(svcArea, arrStream, svcDist, gamma, IP, settings, N, freq=-1):
 	obj   = np.zeros(N)
 	nabla = np.zeros(gamma.shape)
    
-	for i in xrange(N):
-		if freq > 0 and (i + 1) % freq == 0: print '---Path %i' % (i+1)
+	for i in range(N):
+		if freq > 0 and (i + 1) % freq == 0: print('  Path %i' % (i+1))
 		
 		# Generate sample path, solve IP, get gradient estimate
-		omega  = samplePath(svcArea, arrStream, svcDist)
-		prob   = IP.ModelInstance(svcArea, arrStream, omega)
+		omega  = SamplePath(svca, astr, sdist)
+		prob   = IP.ModelInstance(svca, astr, omega)
 		prob.updateObjective(gamma)
 		prob.solve(settings)
 		obj[i] = prob.getObjective()
@@ -175,6 +146,7 @@ def solvePIPs(svcArea, arrStream, svcDist, gamma, IP, settings, N, freq=-1):
 	   
 	return obj, nabla
 
+'''
 def lineSearch(svcArea, arrStream, svcDist, penalty, IPmodel, settings, N, freq=-1):
 	# Given an incumbent solution and gradient estimate at that point,
 	#	evaluates the objective function value associated with penalty
@@ -187,15 +159,15 @@ def lineSearch(svcArea, arrStream, svcDist, penalty, IPmodel, settings, N, freq=
 	gamma    = penalty.getGamma()
 	nabla    = penalty.getNabla()
 	 
-	for i in xrange(N):
-		if freq > 0 and (i+1) % freq == 0: print '---Path %i' % (i+1)
+	for i in range(N):
+		if freq > 0 and (i+1) % freq == 0: print('---Path %i' % (i+1))
 			   
 		# Generate sample path, create skeleton of IP
 		omega = samplePath(svcArea, arrStream, svcDist)
 		prob  = IPmodel.ModelInstance(svcArea, arrStream, omega)
 
 		# Set of multipliers being evaluated
-		for j in xrange(numSteps):
+		for j in range(numSteps):
 			prob.updateObjective(gamma - steps[j]*nabla)
 			prob.solve(settings)
 			objVals[j][i] = prob.getObjective()
@@ -203,3 +175,4 @@ def lineSearch(svcArea, arrStream, svcDist, penalty, IPmodel, settings, N, freq=
 	result = np.array([np.average(stepval) for stepval in objVals])
 
 	return result 
+'''

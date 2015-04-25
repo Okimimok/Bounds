@@ -1,4 +1,4 @@
-from futureEventsList import futureEventsList
+from FutureEventsList import FutureEventsList
 import numpy as np
 		
 def simulate(svcDists, omega, A, v = None, debug = False):
@@ -34,7 +34,7 @@ def simulate(svcDists, omega, A, v = None, debug = False):
 	# Initialize FEL w/ first event (first arrival) and last event (end)
 	# Arrivals have priority 1. End event has priority -1 (happens first at T+1). 
 	T	= omega.T
-	fel = futureEventsList()
+	fel = FutureEventsList()
 	fel.addEvent(T+1, 'end', priority=-1)
 	if len(calls) > 0: fel.addEvent(times[0], 'arrival', priority=1)
 		 
@@ -55,9 +55,9 @@ def simulate(svcDists, omega, A, v = None, debug = False):
 		eventType	  = nextEvent[1]
 		
 		if state['debug']:
-			print 'Time %i' % state['t']
-			if len(busy) > 0: print svcStr
-			else: print 'All ambulances idle'
+			print('Time %i' % state['t'])
+			if len(busy) > 0: print(svcStr)
+			else: print('All ambulances idle')
 
 		# Execute relevant event					 
 		if eventType == 'arrival':
@@ -69,12 +69,12 @@ def simulate(svcDists, omega, A, v = None, debug = False):
 		elif eventType == 'service': 
 			executeService(state)
 		else: 
-			if state['debug']: print 'End simulation'
+			if state['debug']: print('End simulation')
 			
-		if state['debug']: print ''
+		if state['debug']: print('')
 	
 	if state['debug']:
-		 print '\n%i calls served, reward %.3f\n' % (stats['call'], stats['obj'])
+		 print('\n%i calls served, reward %.3f\n' % (stats['call'], stats['obj']))
 	
 	# Average ambulance utilization
 	stats['util'] = stats['busy']/(1.0*T*A)
@@ -86,7 +86,7 @@ def executeArrival(state, stats, fel, call):
 	svc = call['svc'][state['ambs']]
 	r   = call['rnd']
 	
-	if state['debug']: print 'Arrival (Rnd = %.4f, Svc time = %i)' % (r, svc)
+	if state['debug']: print('Arrival (Rnd = %.4f, Svc time = %i)' % (r, svc))
 	
 	if state['ambs'] > 0:			   
 		reward = state['v'][state['ambs']]
@@ -97,18 +97,18 @@ def executeArrival(state, stats, fel, call):
 		fel.addEvent(finishTime, 'service')
 			
 		if state['debug']:
-			print 'Dispatch. Reward: %.3f' % reward
-			print 'Completion time: %i' % finishTime 
-			print '%i call(s) served, total reward: %.3f' % \
-										(stats['calls'], stats['obj'])
+			print('Dispatch. Reward: %.3f' % reward)
+			print('Completion time: %i' % finishTime)
+			print('%i call(s) served, total reward: %.3f' % \
+										(stats['calls'], stats['obj']))
 		
-			print '%i ambulances available' % state['ambs']
+			print('%i ambulances available' % state['ambs'])
 		
 	else:
 		stats['miss'] += 1
-		if state['debug']: print 'Call lost\n%i calls lost' % stats['miss']
+		if state['debug']: print('Call lost\n%i calls lost' % stats['miss'])
 		
 def executeService(state):
 	state['ambs'] += 1
 	
-	if state['debug']: print 'Service\n%i ambulances available' % state['ambs']
+	if state['debug']: print('Service\n%i ambulances available' % state['ambs'])

@@ -1,5 +1,4 @@
 from gurobipy import Model, GRB, quicksum 
-import numpy as np
 
 # Used in computing service time distributions for Matt Maxwell's upper bound
 #	(that dominate the distribution in the actual system). Entails solving
@@ -66,11 +65,13 @@ class ModelInstance:
 		# Settings is a dictionary whose keys are model parameters (e.g., MIPGap,
 		#	OutputFlag), and whose values, well, duh.
 	
-		if 'OutputFlag' in settings:
-			self.m.setParam('OutputFlag', settings['OutputFlag'])
+		for key in settings:
+			if key.lower() == 'outputflag':
+				self.m.setParam(key, settings[key])
+				break
 
-		for option in settings:
-			self.m.setParam(option, settings[option])
+		for key in settings:
+			self.m.setParam(key, settings[key])
 
 		self.m.modelSense = GRB.MAXIMIZE
 		self.m.optimize()

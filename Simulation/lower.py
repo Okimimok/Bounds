@@ -1,5 +1,4 @@
-import sys
-from futureEventsList import futureEventsList
+from FutureEventsList import FutureEventsList
 		
 def simulate(svcArea, omega, executeService, debug = False):
 	# executeService a function handle that takes as input
@@ -35,7 +34,7 @@ def simulate(svcArea, omega, executeService, debug = False):
 	# Arrivals have priority 1. End event has priority -1 (happens first at T+1). 
 	T	= omega.T
 	c   = 0
-	fel = futureEventsList()
+	fel = FutureEventsList()
 	fel.addEvent(T+1, 'end', priority=-1)
 	if len(calls) > 0: fel.addEvent(times[c], 'arrival', (locs[c], svcs[c]), 1)
 		
@@ -48,38 +47,37 @@ def simulate(svcArea, omega, executeService, debug = False):
 		eventType	   = nextEvent[1]
 		
 		if state['debug']:
-			print 'Time %i' % state['t']
+			print('Time %i' % state['t'])
 			
 			# Print pending service completions, idle ambulances, pending redeploys
-			if state['debug']:
-				tmp  = fel.searchEvents('service')
-				if len(tmp) > 0:
-					output = ''
-					for svc in tmp:
-						tmpLoc = str(svcArea.nodes[svc[2]]['loc'])
-						temp += tmpLoc + ' <' + str(int(svc[0])) + '> '
-					print 'Pending service completions: %s' % output 
-				else:
-					print 'No ambulances treating patients'
+			tmp  = fel.searchEvents('service')
+			if len(tmp) > 0:
+				output = ''
+				for svc in tmp:
+					tmpLoc = str(svcArea.nodes[svc[2]]['loc'])
+					tmp += tmpLoc + ' <' + str(int(svc[0])) + '> '
+				print('Pending service completions: %s' % output)
+			else:
+				print('No ambulances treating patients')
 		
-				idle = [j for j in bases if state['ambs'][j] > 0]
-				if len(idle) > 0:
-					output = ''
-					for j in idle:
-						output += str(bases[j]['loc']) + ' '
-					print 'Ambulances available at: %s' % output 
-				else:
-					print 'All ambulances busy'
+			idle = [j for j in bases if state['ambs'][j] > 0]
+			if len(idle) > 0:
+				output = ''
+				for j in idle:
+					output += str(bases[j]['loc']) + ' '
+				print('Ambulances available at: %s' % output)
+			else:
+				print('All ambulances busy')
 			
-				redeploys = fel.searchEvents('redeployment')
-				if len(redeploys) > 0:
-					output =	''
-					for j in redeploys:
-						tmpLoc = str(bases[j[2]]['loc'])
-						output += tmpLoc + ' <' + str(int(j[0])) + '> '
-					print 'Redeployments in progress to: %s' % output
-				else:
-					print 'No ambulances being redeployed'
+			redeploys = fel.searchEvents('redeployment')
+			if len(redeploys) > 0:
+				output =	''
+				for j in redeploys:
+					tmpLoc = str(bases[j[2]]['loc'])
+					output += tmpLoc + ' <' + str(int(j[0])) + '> '
+				print('Redeployments in progress to: %s' % output)
+			else:
+				print('No ambulances being redeployed')
 
 		# Execute relevant event					 
 		if eventType == 'arrival':
@@ -93,11 +91,11 @@ def simulate(svcArea, omega, executeService, debug = False):
 		elif eventType == 'redeployment':
 			executeRedeployment(state, nextEvent[2], svcArea)
 			
-		if state['debug']: print ''
+		if state['debug']: print('')
 	
 	if state['debug']:
-		print 'End of simulation.'
-		print '%i calls served' % stats['obj']
+		print('End of simulation.')
+		print('%i calls served' % stats['obj'])
 	
 	stats['util'] = stats['busy']/(1.0*T*state['A'])
 	return stats
@@ -113,7 +111,7 @@ def executeArrival(state, stats, callInfo, fel, svcArea):
 	svc = callInfo[1]
 	finishTime = -1
 	
-	if state['debug']: print 'Arrival at %s' % str(nodes[loc]['loc'])
+	if state['debug']: print('Arrival at %s' % str(nodes[loc]['loc']))
 	
 	# Assign closest ambulance (if applicable), schedule svc. completion
 	for j in B[loc]:
@@ -124,16 +122,16 @@ def executeArrival(state, stats, callInfo, fel, svcArea):
 			fel.addEvent(finishTime, 'service', loc)
 			
 			if state['debug']:
-				print 'Response from %s' % str(bases[j]['loc'])
-				print '%i call(s) served' % stats['obj']
-				print 'Arrival time: %i' % (state['t'] + dist[loc][j])
-				print 'Service time %i, call finishes at %i' % (svc, finishTime)
-				print 'Call to be completed at time %i' % finishTime
+				print('Response from %s' % str(bases[j]['loc']))
+				print('%i call(s) served' % stats['obj'])
+				print('Arrival time: %i' % (state['t'] + dist[loc][j]))
+				print('Service time %i, call finishes at %i' % (svc, finishTime))
+				print('Call to be completed at time %i' % finishTime)
 			break
 		
 	if finishTime == -1:
 		stats['miss'] += 1
-		if state['debug']: print 'Call lost\n%i missed calls' % stats['miss']
+		if state['debug']: print('Call lost\n%i missed calls' % stats['miss'])
 		
 def executeRedeployment(state, base, svcArea):
 	bases = svcArea.bases
@@ -141,4 +139,4 @@ def executeRedeployment(state, base, svcArea):
 	# Increment by one the number of ambulances available at destination
 	state['ambs'][base] += 1
 	
-	if state['debug']: print 'Redeployment to %s' % str(bases[base]['loc'])
+	if state['debug']: print('Redeployment to %s' % str(bases[base]['loc']))

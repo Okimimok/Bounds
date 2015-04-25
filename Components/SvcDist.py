@@ -1,6 +1,6 @@
 import numpy as np
 
-class serviceDistribution:
+class SvcDist:
 	# For all things related to the service time distribution. 
 	#	Pmf, cdf, random variate generation. Initialized with two
 	#	vectors: vals (which contains the support) and probs (the
@@ -26,7 +26,7 @@ class serviceDistribution:
 		self.__cumul = np.zeros(self.__N)
 		self.__cumul[0] = self.pmf[0]
 
-		for i in xrange(1, self.__N):
+		for i in range(1, self.__N):
 			self.__cumul[i] = self.__cumul[i-1] + self.pmf[i]
 			
 	def __buildCDF(self):
@@ -34,7 +34,7 @@ class serviceDistribution:
 		#	maximum value in the support
 		self.__cdf     = np.zeros(self.__maxVal+1)
 		self.__cdf[-1] = 1
-		for i in xrange(self.__N - 1):
+		for i in range(self.__N - 1):
 			left  = self.support[i]
 			right = self.support[i+1]
 			self.__cdf[left:right] = self.__cumul[i]	
@@ -63,7 +63,7 @@ class serviceDistribution:
 		return self.__cumul
 
 	def __computeMean(self):
-		self.mean = sum([self.pmf[i]*self.support[i] for i in xrange(self.__N)])
+		self.mean = sum([self.pmf[i]*self.support[i] for i in range(self.__N)])
 
 	def evalCDF(self, x):
 		# Given x, computes F(x)

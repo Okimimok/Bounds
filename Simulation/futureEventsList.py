@@ -1,4 +1,4 @@
-class futureEventsList():
+class FutureEventsList():
 	def __init__(self):
 		# Initialize with time at which simulation ends
 		self.fel = []

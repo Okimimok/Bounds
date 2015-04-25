@@ -7,16 +7,16 @@ class ModelInstance:
 	#	from a single penalty.
 	# If multipliers specified from the outset, coefficents for y-variables
 	#	set without having to call updateObjective.
-	def __init__(self, svcArea, arrStream, omega, gamma=None):
-		self.nodes = svcArea.nodes
-		self.bases = svcArea.bases
-		self.dist  = svcArea.getDist()
-		self.B	   = svcArea.getB()
-		self.A	   = sum([self.bases[j]['alloc'] for j in self.bases])
-		self.RP    = arrStream.getRP()
-		self.T	   = arrStream.T
+	def __init__(self, svca, astr, omega, gamma=None):
+		self.nodes = svca.nodes
+		self.bases = svca.bases
+		self.dist  = svca.getDist()
+		self.B     = svca.getB()
+		self.A     = sum([self.bases[j]['alloc'] for j in self.bases])
+		self.RP    = astr.getRP()
+		self.T     = astr.T
 		self.calls = omega.getCalls()
-		self.Q	   = omega.getQ()
+		self.Q     = omega.getQ()
 
 		# Number of degrees of freedom in the penalty. Defaults to zero
 		#	(0 = no penalty, 1 = time based, 2 = time-location based)
@@ -50,7 +50,7 @@ class ModelInstance:
 		# At time t, the number of idle ambulances at base j
 		y = {}
 		if self.dof == 1:
-			for t in xrange(self.T+1):
+			for t in range(self.T+1):
 				y[t] = {}
 				for j in self.bases:
 					if t in self.calls and j in self.B[self.calls[t]['loc']]:
@@ -60,7 +60,7 @@ class ModelInstance:
 						y[t][j] = self.m.addVar(lb=0, ub=self.A, vtype=GRB.INTEGER,\
 									obj = gamma[t]*self.RP[t][j])
 		elif self.dof == 2:
-			for t in xrange(self.T+1):
+			for t in range(self.T+1):
 				y[t] = {}
 				for j in self.bases:
 					if t in self.calls and j in self.B[self.calls[t]['loc']]:
@@ -70,7 +70,7 @@ class ModelInstance:
 						y[t][j] = self.m.addVar(lb=0, ub=self.A, vtype=GRB.INTEGER,\
 									obj = gamma[t][j]*self.RP[t][j])
 		else:
-			for t in xrange(self.T+1):
+			for t in range(self.T+1):
 				y[t] = {}
 				for j in self.bases:
 					y[t][j] = self.m.addVar(lb=0, ub=self.A, vtype=GRB.INTEGER)
@@ -84,7 +84,7 @@ class ModelInstance:
 		N		  = len(callTimes)
 
 		cnt = 0
-		for t in xrange(self.T):
+		for t in range(self.T):
 			if cnt < N and t == callTimes[cnt]:
 				cnt  += 1 
 				loc   = self.calls[t]['loc']
@@ -142,7 +142,7 @@ class ModelInstance:
 		self.dof = gamma.ndim
 
 		if self.dof == 1:
-			for t in xrange(self.T+1):
+			for t in range(self.T+1):
 				for j in self.bases:
 					if t in self.calls and j in self.B[self.calls[t]['loc']]:
 						y[t][j].setAttr("obj", gamma[t]*(self.RP[t][j]-1))
@@ -150,7 +150,7 @@ class ModelInstance:
 						y[t][j].setAttr("obj", gamma[t]*self.RP[t][j])
 						
 		else:
-			for t in xrange(self.T+1):
+			for t in range(self.T+1):
 				for j in self.bases:
 					if t in self.calls and j in self.B[self.calls[t]['loc']]:
 						y[t][j].setAttr("obj", gamma[t][j]*(self.RP[t][j]-1))
@@ -167,11 +167,13 @@ class ModelInstance:
 		#	OutputFlag), and whose values, well, duh.
 	
 		# Putting settings into effect.
-		if 'OutputFlag' in settings:
-			self.m.setParam('OutputFlag', settings['OutputFlag'])
+		for key in settings:
+			if key.lower() == 'outputflag':
+				self.m.setParam(key, settings[key])
+				break
 
-		for option in settings:
-			self.m.setParam(option, settings[option])
+		for key in settings:
+			self.m.setParam(key, settings[key])
 
 		self.m.modelSense = GRB.MAXIMIZE
 		self.m.optimize()
@@ -218,14 +220,14 @@ class ModelInstance:
 
 		if self.dof == 1:
 			gradSample = np.zeros(self.T+1)
-			for t in xrange(self.T+1):
+			for t in range(self.T+1):
 				for j in self.bases:
 					gradSample[t] += y[t][j].x*self.RP[t][j]
 					if t in self.calls and j in self.B[self.calls[t]['loc']]:
 						gradSample[t] -= y[t][j].x
 		else:
 			gradSample = np.zeros((self.T+1, len(self.bases)))
-			for t in xrange(self.T+1):
+			for t in range(self.T+1):
 				for j in self.bases:
 					gradSample[t][j] = y[t][j].x*self.RP[t][j]
 					if t in self.calls and j in self.B[self.calls[t]['loc']]:

@@ -4,7 +4,7 @@ from math import ceil
 from bisect import bisect_left
 import numpy as np
 
-class samplePath():
+class SamplePath():
 	def __init__(self, svcArea, arrStream, svcDist=None, mxwDist=None):
 		self.T         = arrStream.T		
 		self.A         = svcArea.A
@@ -19,7 +19,7 @@ class samplePath():
 		self.calls = {}
 		P = self.arrStream.getP()
 	
-		for t in xrange(self.T + 1):
+		for t in range(self.T + 1):
 			# Call pmf at time t
 			callLoc = discreteN(P[t])
 		
@@ -34,7 +34,7 @@ class samplePath():
 
 				if self.mxwDist is not None:
 					self.calls[t]['mxw'] = np.zeros(self.A+1, dtype='int64')
-					for a in xrange(self.A+1):
+					for a in range(self.A+1):
 						self.calls[t]['mxw'][a] = self.mxwDist[a].sample(r)
 		
 	def __buildQ(self):
@@ -47,7 +47,7 @@ class samplePath():
 		B      = self.svcArea.getB()
 		dist   = self.svcArea.getDist()
 
-		for t in xrange(self.T + 1):
+		for t in range(self.T + 1):
 			self.Q[t] = {}
 			for j in self.svcArea.bases:
 				self.Q[t][j] = []
@@ -76,7 +76,7 @@ class samplePath():
 			self.QM[t] = []
 
 		for t in times:
-			for a in xrange(1, self.A+1):
+			for a in range(1, self.A+1):
 				# Find earliest call time following service completion
 				svc    = self.calls[t]['mxw'][a]
 				finish = t + svc

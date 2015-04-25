@@ -9,15 +9,15 @@ def compliance(simState, location, fel, svcArea, table):
 	redp = [i[2] for i in fel.searchEvents('redeployment')]
 	idle = []
 	for j in svcArea.bases:
-		for i in xrange(simState['ambs'][j]):
+		for i in range(simState['ambs'][j]):
 			idle.append(j)
 	eff  = sorted(redp+idle)
 
 	# Checking for a deviation...
 	done = False
-	for a in xrange(1, len(eff)+2):
+	for a in range(1, len(eff)+2):
 		tmp = list(eff)	
-		for b in xrange(a):
+		for b in range(a):
 			if table[a][b] not in tmp:
 				newBase = table[a][b]
 				done    = True
@@ -30,6 +30,6 @@ def compliance(simState, location, fel, svcArea, table):
 	fel.addEvent(finish, 'redeployment', newBase)
 
 	if simState['debug']:
-		print 'Service completion at node %s' % str(svcArea.nodes[location]['loc'])
-		print 'To be redeployed to base %s' % str(svcArea.bases[newBase]['loc'])
-		print 'Redeployment completes at time %i' % finish
+		print('Service completion at node %s' % str(svcArea.nodes[location]['loc']))
+		print('To be redeployed to base %s' % str(svcArea.bases[newBase]['loc']))
+		print('Redeployment completes at time %i' % finish)

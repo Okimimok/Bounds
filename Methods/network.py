@@ -1,13 +1,13 @@
 from matplotlib import pyplot as plt
-from ..Components.serviceArea import serviceArea
+from ..Components.SvcArea import SvcArea
 from scipy.stats import norm
 import numpy as np
 
 def writeNetwork(networkPath, nX, nY, nodeDist, Tresp, P, bases, ambLocs):
 	with open(networkPath, 'w') as f:
 		f.write('%i %i %.2f %i\n' % (nX, nY, nodeDist, Tresp))
-		for i in xrange(nX):
-			for j in xrange(nY):
+		for i in range(nX):
+			for j in range(nY):
 				if (i, j) in bases:
 					if (i, j) in ambLocs:
 						ambs = ambLocs[(i, j)]
@@ -38,8 +38,8 @@ def readNetwork(networkPath):
 		maxDist  = int(line[3])
 		numNodes = 0
 		
-		for i in xrange(sizeX):
-			for j in xrange(sizeY):
+		for i in range(sizeX):
+			for j in range(sizeY):
 				line = f.readline().split()
 				nodes[numNodes] = {'loc':(i, j), 'prob':float(line[2])}
 
@@ -52,7 +52,7 @@ def readNetwork(networkPath):
 					
 				numNodes += 1
 
-	return serviceArea(nodes, bases, nodeDist, maxDist)
+	return SvcArea(nodes, bases, nodeDist, maxDist)
 
 def heatmap(networkPath, mapPath, bases, majorAx=-1, minorAx=-1):
 	with open(networkPath, 'r') as f:
@@ -60,8 +60,8 @@ def heatmap(networkPath, mapPath, bases, majorAx=-1, minorAx=-1):
 		nX	 = int(line[0])
 		nY	 = int(line[1])
 		prob = np.zeros((nX, nY))
-		for i in xrange(nX):
-			for j in xrange(nY):
+		for i in range(nX):
+			for j in range(nY):
 				line = f.readline().split()
 				prob[i][j] = float(line[2])
 	
@@ -84,8 +84,6 @@ def heatmap(networkPath, mapPath, bases, majorAx=-1, minorAx=-1):
 
 	for j in bases:
 		ax.plot(j[0]+0.5, j[1]+0.5, marker = 'o', color='g')
-	
-	total = sum(sum(prob))
 	
 	plt.xlim([0, nX])
 	plt.ylim([0, nY])
