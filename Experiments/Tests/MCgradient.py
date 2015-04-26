@@ -30,6 +30,7 @@ def main():
 	N     = cp['inputs'].getint('N')
 	prob  = cp['inputs'].getfloat('prob')
 	iters = cp['inputs'].getint('iters')
+	gamma = eval(cp['inputs']['gamma'])
 	steps = eval(cp['inputs']['steps'])
         
 	# Service distribution    
@@ -41,7 +42,6 @@ def main():
 	astr.updateP(prob)
 
 	# Penalty Multipliers
-	gamma	= np.zeros(T+1)
 	penalty = CvgPenalty(gamma)
 	penalty.setStepSizes(steps)
 	
