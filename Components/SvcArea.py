@@ -2,12 +2,22 @@ import numpy as np
 
 class SvcArea():
 	# Comment inserted here!
-	def __init__(self, nodes, bases, nodeDist, maxDist):
+<<<<<<< HEAD
+	def __init__(self, nodes, bases, Tunit, Tresp):
+		# Tunit : Time needed (min.) to travel one unit in the network
+		# Tresp : Response time threshold
+		self.nodes = nodes
+		self.bases = bases
+		self.A     = sum([bases[j]['ambs'] for j in bases])
+		self.Tunit = Tunit
+		self.Tresp = Tresp
+=======
+	def __init__(self, nodes, bases, Tresp):
 		self.nodes	  = nodes
 		self.bases	  = bases
-		self.A        = sum([bases[j]['alloc'] for j in bases])
-		self.nodeDist = nodeDist
-		self.maxDist  = maxDist
+		self.A        = sum([bases[j]['ambs'] for j in bases])
+		self.Tresp  = Tresp
+>>>>>>> 286f77c... Continuous coordinates
 		self.__buildDist()
 		self.__buildB()
 		self.__buildNBdist()
@@ -17,8 +27,8 @@ class SvcArea():
 		# Build distance matrix between nodes (rows) and bases (columns)
 		nodes = self.nodes
 		bases = self.bases
-		I	  = len(nodes)
-		J	  = len(bases)
+		I     = len(nodes)
+		J     = len(bases)
 		self.dist = np.empty((I, J))
 		for i in range(I):
 			for j in range(J):
@@ -33,7 +43,7 @@ class SvcArea():
 		 for i in self.nodes:
 			 temp = sorted([(self.dist[i][j], j) for j in self.bases]) 
 			 self.__BA[i] = [k[1] for k in temp]
-			 self.__B[i]  = [k[1] for k in temp if k[0] <= self.maxDist]
+			 self.__B[i]  = [k[1] for k in temp if k[0] <= self.Tresp]
 								 
 	def __buildR(self):
 		# R[j] = Set of demand nodes to which base j response possible
@@ -47,11 +57,16 @@ class SvcArea():
 		#	distance from i, so just need to get first element of B[i]
 		self.__NBdist = {}
 		for i in self.nodes: 
-			self.__NBdist[i] = self.dist[i][self.__B[i][0]]
+			self.__NBdist[i] = self.dist[i][self.__BA[i][0]]
 
 	def distance(self, x, y):
+<<<<<<< HEAD
+		# Outputs Manhattan travel time (min.) between two pts in the network 
+		return (abs(x[0] - y[0]) + abs(x[1] - y[1]))*self.Tunit
+=======
 		# Outputs Manhattan distance between two points x and y in R^2
-		return self.nodeDist*(abs(x[0] - y[0]) + abs(x[1] - y[1]))
+		return abs(x[0] - y[0]) + abs(x[1] - y[1])
+>>>>>>> 286f77c... Continuous coordinates
 			
 	def getNodes(self):
 		return self.nodes
@@ -60,7 +75,7 @@ class SvcArea():
 		return self.bases
 		
 	def getMaxDist(self):
-		return self.maxDist
+		return self.Tresp
 			
 	def getDist(self):
 		return self.dist

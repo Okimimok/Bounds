@@ -3,22 +3,37 @@ from ..Components.SvcArea import SvcArea
 from scipy.stats import norm
 import numpy as np
 
-def writeNetwork(networkPath, nX, nY, nodeDist, Tresp, P, bases, ambLocs):
+<<<<<<< HEAD
+def writeNetwork(networkPath, nodes, bases, Tunit, Tresp):
+	nNodes = len(nodes)
+	nBases = len(bases)
 	with open(networkPath, 'w') as f:
-		f.write('%i %i %.2f %i\n' % (nX, nY, nodeDist, Tresp))
-		for i in range(nX):
-			for j in range(nY):
-				if (i, j) in bases:
-					if (i, j) in ambLocs:
-						ambs = ambLocs[(i, j)]
-					else:
-						ambs = 0
+		f.write('#NumNodes NumBases UnitTravelTime RespThreshold\n')
+		f.write('%i %i %.6f %.2f\n' % (nNodes, nBases, Tunit, Tresp))
 
-					# Node location, arrival probability, is base?, # ambs deployed
-					f.write('%i %i %.6f %i %i \n' % (i, j, P[i][j], bases[(i,j)], ambs))
-					
-				else:
-				   f.write('%i %i %.6f %i %i \n' % (i, j, P[i][j], -1, 0))
+		f.write('#DemandNodes: x y\n')
+=======
+def writeNetwork(networkPath, nodes, bases, Tresp):
+	nNodes = len(nodes)
+	nBases = len(bases)
+	with open(networkPath, 'w') as f:
+		f.write('#NumNodes NumBases RespThreshold\n')
+		f.write('%i %i %.2f\n' % (nNodes, nBases, Tresp))
+
+		f.write('#DemandNodes\n')
+>>>>>>> 286f77c... Continuous coordinates
+		for i in range(nNodes):
+			loc = nodes[i]['loc']
+			f.write('%i %.2f %.2f %.6f\n' % (i, loc[0], loc[1], nodes[i]['prob']))
+
+<<<<<<< HEAD
+		f.write('#Bases: x y NumAmbs\n')
+=======
+		f.write('#Bases\n')
+>>>>>>> 286f77c... Continuous coordinates
+		for j in range(nBases):
+			loc = bases[j]['loc']
+			f.write('%i %.2f %.2f %i\n' % (j, loc[0], loc[1], bases[j]['ambs']))
 
 def readNetwork(networkPath):
 	# Given data about a service area stored in a text file (containing info)
@@ -31,43 +46,53 @@ def readNetwork(networkPath):
 	nodes = {}
 	
 	with open(networkPath, 'r') as f:
-		line	 = f.readline().split()
-		sizeX	 = int(line[0])
-		sizeY	 = int(line[1])
-		nodeDist = float(line[2])
-		maxDist  = int(line[3])
-		numNodes = 0
-		
-		for i in range(sizeX):
-			for j in range(sizeY):
-				line = f.readline().split()
-				nodes[numNodes] = {'loc':(i, j), 'prob':float(line[2])}
+		tmp    = f.readline()
+		line   = f.readline().split()
+		nNodes = int(line[0])
+		nBases = int(line[1])
+<<<<<<< HEAD
+		Tunit  = float(line[2])
+		Tresp  = float(line[3])
+=======
+		Tresp  = float(line[2])
+>>>>>>> 286f77c... Continuous coordinates
 
-				# Checking base number, if any						
-				tmp = int(line[3])
-				if tmp >= 0:
-					bases[tmp]			= {}
-					bases[tmp]['loc']	= (int(line[0]), int(line[1]))
-					bases[tmp]['alloc'] = int(line[4])
-					
-				numNodes += 1
+		# Reading nodes
+		tmp = f.readline()
+		for i in range(nNodes):
+			line = f.readline().split()
+			nodes[i] = {}
+			nodes[i]['loc']  = (float(line[1]), float(line[2]))
+			nodes[i]['prob'] = float(line[3])
 
-	return SvcArea(nodes, bases, nodeDist, maxDist)
+		# Reading bases
+		tmp = f.readline()
+		for j in range(nBases):
+			line = f.readline().split()
+			bases[j]         = {}
+			bases[j]['loc']  = (float(line[1]), float(line[2]))
+			bases[j]['ambs'] = int(line[3])
 
-def heatmap(networkPath, mapPath, bases, majorAx=-1, minorAx=-1):
-	with open(networkPath, 'r') as f:
-		line = f.readline().split()
-		nX	 = int(line[0])
-		nY	 = int(line[1])
-		prob = np.zeros((nX, nY))
-		for i in range(nX):
-			for j in range(nY):
-				line = f.readline().split()
-				prob[i][j] = float(line[2])
-	
-	rows, cols = np.indices((nX+1, nY+1))
+<<<<<<< HEAD
+	return SvcArea(nodes, bases, Tunit, Tresp)
+=======
+	return SvcArea(nodes, bases, Tresp)
+>>>>>>> 286f77c... Continuous coordinates
+
+def heatmap(mapPath, sizeX, sizeY, grid, nodes, bases, minorAx=-1, majorAx=-1):
+	nX   = sizeX // grid
+	nY   = sizeY // grid
+	prob = np.zeros((nX, nY))
+
+	for i in nodes:
+		loc = nodes[i]['loc']
+		# Find what grid cell loc falls into, and update accordingly
+		indX = loc[0] // grid
+		indY = loc[1] // grid
+		prob[indX][indY] += nodes[i]['prob']
+
 	ax         = plt.subplot(111)
-	plt.pcolormesh(rows, cols, prob, cmap = 'Greys')
+	rows, cols = np.indices((nX+1, nY+1))
 
 	if minorAx > 0:
 		ax.xaxis.set_minor_locator(plt.MultipleLocator(minorAx))
@@ -77,23 +102,24 @@ def heatmap(networkPath, mapPath, bases, majorAx=-1, minorAx=-1):
 		ax.xaxis.set_major_locator(plt.MultipleLocator(majorAx))
 		ax.yaxis.set_major_locator(plt.MultipleLocator(majorAx))
 
-	ax.xaxis.grid(True,'minor', linewidth = 0.5, linestyle = '-')
-	ax.yaxis.grid(True,'minor', linewidth = 0.5, linestyle = '-')
-	ax.xaxis.grid(True,'major',linewidth=1.5, linestyle = '-')
-	ax.yaxis.grid(True,'major',linewidth=1.5, linestyle = '-')
+	plt.pcolormesh(rows, cols, prob, cmap='Greys')
+	ax.xaxis.grid(True, 'minor', linewidth=0.5, linestyle='-')
+	ax.yaxis.grid(True, 'minor', linewidth=0.5, linestyle='-')
+	ax.xaxis.grid(True, 'major', linewidth=1.5, linestyle='-')
+	ax.yaxis.grid(True, 'major', linewidth=1.5, linestyle='-')
 
 	for j in bases:
-		ax.plot(j[0]+0.5, j[1]+0.5, marker = 'o', color='g')
-	
-	plt.xlim([0, nX])
-	plt.ylim([0, nY])
+		loc = bases[j]['loc'] 
+		ax.plot(loc[0], loc[1], marker = 'o', color='g', zorder=4)
+
+	plt.xlim([0, sizeX])
+	plt.ylim([0, sizeY])
 	plt.savefig(mapPath)
 	plt.close('all')
 
-def bivariateNormalIntegral(mu, sigma, x):
-	term1 = norm.cdf(x[0]+0.5, mu[0], sigma[0])*norm.cdf(x[1]+0.5, mu[1], sigma[1])
-	term2 = norm.cdf(x[0]+0.5, mu[0], sigma[0])*norm.cdf(x[1]-0.5, mu[1], sigma[1])
-	term3 = norm.cdf(x[0]-0.5, mu[0], sigma[0])*norm.cdf(x[1]+0.5, mu[1], sigma[1])
-	term4 = norm.cdf(x[0]-0.5, mu[0], sigma[0])*norm.cdf(x[1]-0.5, mu[1], sigma[1])
-	
+def bivariateNormalIntegral(mu, sigma, x, dt):
+	term1 = norm.cdf(x[0]+dt, mu[0], sigma[0])*norm.cdf(x[1]+dt, mu[1], sigma[1])
+	term2 = norm.cdf(x[0]+dt, mu[0], sigma[0])*norm.cdf(x[1]-dt, mu[1], sigma[1])
+	term3 = norm.cdf(x[0]-dt, mu[0], sigma[0])*norm.cdf(x[1]+dt, mu[1], sigma[1])
+	term4 = norm.cdf(x[0]-dt, mu[0], sigma[0])*norm.cdf(x[1]-dt, mu[1], sigma[1])
 	return term1 - term2 - term3 + term4

@@ -1,4 +1,5 @@
 from .FutureEventsList import FutureEventsList		
+from math import ceil
 
 def simulate(svca, omega, executeService, debug=False):
 	# executeService a function handle that takes as input
@@ -19,7 +20,7 @@ def simulate(svca, omega, executeService, debug=False):
 	
 	# Initial simulation state, A = Number of ambulances in the system
 	state = {}
-	state['ambs']  = [bases[j]['alloc'] for j in bases]
+	state['ambs']  = [bases[j]['ambs'] for j in bases]
 	state['t']	   = 0
 	state['A']	   = sum(state['ambs'])
 	state['debug'] = debug
@@ -135,7 +136,7 @@ def executeArrival(state, stats, callInfo, fel, svca):
 				stats['late'] += 1
 				if debug: print('Ambulance arrives late')
 
-			finishTime	= arrivalTime + svc 
+			finishTime = int(ceil( arrivalTime + svc ))
 			fel.addEvent(finishTime, 'service', loc)
 			if debug:
 				print('Service time %i, call finishes at %i' %\

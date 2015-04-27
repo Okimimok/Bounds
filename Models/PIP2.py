@@ -12,7 +12,7 @@ class ModelInstance:
 		self.bases = svca.bases
 		self.dist  = svca.getDist()
 		self.B     = svca.getB()
-		self.A     = sum([self.bases[j]['alloc'] for j in self.bases])
+		self.A     = sum([self.bases[j]['ambs'] for j in self.bases])
 		self.RP    = astr.getRP()
 		self.T     = astr.T
 		self.calls = omega.getCalls()
@@ -114,7 +114,7 @@ class ModelInstance:
 					self.m.addConstr(expr3 == y[t+1][j])
 			else:
 				for j in self.bases:
-					self.m.addConstr(y[1][j] == self.bases[j]['alloc'])
+					self.m.addConstr(y[1][j] == self.bases[j]['ambs'])
 
 		# Boundary condition: call arrives in final time period
 		if self.T == callTimes[-1]:

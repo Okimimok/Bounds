@@ -20,8 +20,10 @@ def main():
 
 	networkFile = cp['files']['networkFile']
 	sdFile      = cp['files']['sdFile']
+	gradFile    = cp['files']['gradFile']
 	networkPath = abspath(join(abspath(join(basePath, "..//")), networkFile))
 	sdPath      = abspath(join(abspath(join(basePath, "..//")), sdFile))
+	gradPath    = abspath(join(abspath(join(basePath, "..//")), gradFile))
 
     # Basic inputs
 	seed1 = cp['inputs'].getint('seed1')
@@ -63,6 +65,15 @@ def main():
 	seed(seed2) 
 	obj, _ = solvePIPs(svca, astr, sdist, gamma, PIP2, settings, N, freq=freq)
 	print('Final upper bound: %.4f +/- %.4f' % confInt(obj))
-	
+
+	'''
+	# Writing gradient to file
+	with open(gradPath, 'w') as f:
+		f.write('%i\n' % T)
+		gamma = penalty.getGamma()
+		for t in range(T+1):
+			f.write('%i %.6f\n' % (t, gamma[t]))
+	'''
+				
 if __name__ == '__main__':
     main()

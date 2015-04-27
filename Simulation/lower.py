@@ -1,5 +1,6 @@
 from .FutureEventsList import FutureEventsList
-		
+from math import ceil		
+
 def simulate(svca, omega, executeService, debug = False):
 	# executeService a function handle that takes as input
 	#  
@@ -118,7 +119,7 @@ def executeArrival(state, stats, callInfo, fel, svca):
 		if state['ambs'][j] > 0:			   
 			state['ambs'][j] -= 1			
 			stats['obj']     += 1			
-			finishTime = state['t'] + svc + dist[loc][j]
+			finishTime = int(ceil(state['t'] + svc + dist[loc][j]))
 			fel.addEvent(finishTime, 'service', loc)
 			
 			if state['debug']:

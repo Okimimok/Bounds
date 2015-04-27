@@ -1,37 +1,58 @@
-import numpy as np
 from os.path import dirname, realpath, join
 from ....Methods.network import writeNetwork, heatmap, bivariateNormalIntegral as bvni	
 
 # Network file location
 basePath    = dirname(realpath(__file__))
 networkFile = "five.txt"
-heatFile	= "fiveheat.pdf"
+heatFile    = "fiveheat.pdf"
 networkPath = join(basePath, networkFile)
 heatPath    = join(basePath, heatFile)
 
-# Size of grid
-nX = 15
-nY = 15
-nodes = [(i, j) for i in range(nX) for j in range(nY)]
+# Size of grid, response time threshold
+sizeX = 15
+sizeY = 15
+<<<<<<< HEAD
+Tunit = 1.0
+=======
+>>>>>>> 286f77c... Continuous coordinates
+Tresp = 2
+grid  = 1.0
 
-# Dispersion of bases within grid
-bases = {(1, 13): 0, (4, 13): 1,  (7, 13): 2, (10, 13): 3, (13, 13): 4,\
-			 (1, 10): 5, (4, 10): 6, (7, 10): 7, (10, 10): 8, (13, 10): 9,\
-			 (1, 7): 10, (4, 7): 11, (7, 7): 12, (10, 7): 13, (13, 7): 14,\
-			 (1, 4): 15, (4, 4): 16, (7, 4): 17, (10, 4): 18, (13, 4): 19,\
-			 (1, 1): 20, (4, 1): 21, (7, 1): 22, (10, 1): 23, (13, 1): 24}
+# Nodes: center of each cell in 15x15 grid
+nodes = {}
+count = 0
+for i in range(sizeX):
+	for j in range(sizeY):
+		nodes[count] = {'loc': (i + 0.5, j + 0.5), 'prob': 0.0}
+		count += 1
 
-# Dispersion of ambulances within bases
-ambLocs = {}
-ambLocs[(7, 7)]  = 1
-ambLocs[(4, 4)]  = 1
-ambLocs[(4, 10)]  = 1
-ambLocs[(10, 4)] = 1
-ambLocs[(10, 10)] = 1
-
-# Response time threshold, distance between nodes
-Tresp	 = 2 
-nodeDist = 1
+# Base locations		
+bases = {}
+bases[0]  = {'loc': ( 1.5, 13.5), 'ambs': 0}
+bases[1]  = {'loc': ( 4.5, 13.5), 'ambs': 0}
+bases[2]  = {'loc': ( 7.5, 13.5), 'ambs': 0}
+bases[3]  = {'loc': (10.5, 13.5), 'ambs': 1}
+bases[4]  = {'loc': (13.5, 13.5), 'ambs': 0}
+bases[5]  = {'loc': ( 1.5, 10.5), 'ambs': 0}
+bases[6]  = {'loc': ( 4.5, 10.5), 'ambs': 1}
+bases[7]  = {'loc': ( 7.5, 10.5), 'ambs': 0}
+bases[8]  = {'loc': (10.5, 10.5), 'ambs': 0}
+bases[9]  = {'loc': (13.5, 10.5), 'ambs': 0}
+bases[10] = {'loc': ( 1.5,  7.5), 'ambs': 0}
+bases[11] = {'loc': ( 4.5,  7.5), 'ambs': 0}
+bases[12] = {'loc': ( 7.5,  7.5), 'ambs': 1}
+bases[13] = {'loc': (10.5,  7.5), 'ambs': 0}
+bases[14] = {'loc': (13.5,  7.5), 'ambs': 0}
+bases[15] = {'loc': ( 1.5,  4.5), 'ambs': 0}
+bases[16] = {'loc': ( 4.5,  4.5), 'ambs': 1}
+bases[17] = {'loc': ( 7.5,  4.5), 'ambs': 0}
+bases[18] = {'loc': (10.5,  4.5), 'ambs': 1}
+bases[19] = {'loc': (13.5,  4.5), 'ambs': 0}
+bases[20] = {'loc': ( 1.5,  1.5), 'ambs': 0}
+bases[21] = {'loc': ( 4.5,  1.5), 'ambs': 0}
+bases[22] = {'loc': ( 7.5,  1.5), 'ambs': 0}
+bases[23] = {'loc': (10.5,  1.5), 'ambs': 0}
+bases[24] = {'loc': (13.5,  1.5), 'ambs': 0}
 
 # Peaks
 sz = [2.5, 1, 1, 1, 1]
@@ -43,12 +64,14 @@ majorAx = 3
 minorAx = 1
 
 # Probability of call arriving within given node
-P = np.zeros((nX, nY))
+for i in nodes:
+	loc = nodes[i]['loc']
+	for j in range(len(mu)):
+		nodes[i]['prob'] += sz[j]*bvni(mu[j], sg[j], (loc[0], loc[1]), grid/2)
 
-for i in range(nX):
-	for j in range(nY):
-		for k in range(len(mu)):
-			P[i][j] += sz[k]*bvni(mu[k], sg[k], (i, j))
-
-writeNetwork(networkPath, nX, nY, nodeDist, Tresp, P, bases, ambLocs)
-heatmap(networkPath, heatPath, bases, majorAx, minorAx)
+<<<<<<< HEAD
+writeNetwork(networkPath, nodes, bases, Tunit, Tresp)
+=======
+writeNetwork(networkPath, nodes, bases, Tresp)
+>>>>>>> 286f77c... Continuous coordinates
+heatmap(heatPath, sizeX, sizeY, grid, nodes, bases, minorAx=1, majorAx=3)

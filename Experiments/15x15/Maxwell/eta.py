@@ -3,12 +3,12 @@ from math import exp
 from os.path import abspath, dirname, realpath, join
 from ....Upper.maxwell import buildEta, writeEta
 from ....Methods.network import readNetwork	
-from ....Components.arrivalStream import arrivalStream
-from ....Components.serviceDistribution import serviceDistribution
+from ....Components.ArrStream import ArrStream
+from ....Components.SvcDist import SvcDist
 
 basePath    = dirname(realpath(__file__))
-etaFile     = "eta.txt"
-networkFile = "five.txt"
+etaFile     = "etaTenBall.txt"
+networkFile = "tenBall.txt"
 etaPath     = join(basePath, etaFile) 
 networkPath = abspath(join(basePath, "..//Graph//",  networkFile))
 
@@ -19,12 +19,12 @@ mu        = 24.0
 numVals   = 120
 vals      = np.arange(1, numVals+1)
 probs     = [exp(-(vals[i]-1)/mu)*(1 - exp(-1/mu))\
-					 for i in xrange(numVals)]
+					 for i in range(numVals)]
 probs[-1] += 1 - sum(probs)
-svcDist   = serviceDistribution(vals, probs)
+sdist     = SvcDist(vals, probs)
 
 # Network, arrival patterns
-svcArea   = readNetwork(networkPath)
-arrStream = arrivalStream(svcArea, T)
-eta       = buildEta(svcArea, arrStream, svcDist, etaPath, debug=True)
+svca = readNetwork(networkPath)
+astr = ArrStream(svca, T)
+eta  = buildEta(svca, astr, sdist, etaPath, debug=True)
 writeEta(eta, etaPath)

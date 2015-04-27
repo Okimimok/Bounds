@@ -6,7 +6,7 @@ def buildEta(svcArea, arrStream, svcDist, filePath, debug=False):
 	# Construct dominating service time distributions by solving a sequence
 	# 	of MCLPs for various values of r (cdf breakpoints) and a (number of
 	#	available ambulances
-	maxA  = sum([svcArea.bases[j]['alloc'] for j in svcArea.bases])
+	maxA  = sum([svcArea.bases[j]['ambs'] for j in svcArea.bases])
 	maxR  = -1
 
 	for i in svcArea.nodes:
