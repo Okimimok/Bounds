@@ -4,6 +4,7 @@ from scipy.stats import norm
 import numpy as np
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 def writeNetwork(networkPath, nodes, bases, Tunit, Tresp):
 	nNodes = len(nodes)
 	nBases = len(bases)
@@ -14,23 +15,34 @@ def writeNetwork(networkPath, nodes, bases, Tunit, Tresp):
 		f.write('#DemandNodes: x y\n')
 =======
 def writeNetwork(networkPath, nodes, bases, Tresp):
+=======
+def writeNetwork(networkPath, nodes, bases, Tunit, Tresp):
+>>>>>>> a1261b4... New home for eta and v
 	nNodes = len(nodes)
 	nBases = len(bases)
 	with open(networkPath, 'w') as f:
-		f.write('#NumNodes NumBases RespThreshold\n')
-		f.write('%i %i %.2f\n' % (nNodes, nBases, Tresp))
+		f.write('#NumNodes NumBases UnitTravelTime RespThreshold\n')
+		f.write('%i %i %.6f %.2f\n' % (nNodes, nBases, Tunit, Tresp))
 
+<<<<<<< HEAD
 		f.write('#DemandNodes\n')
 >>>>>>> 286f77c... Continuous coordinates
+=======
+		f.write('#DemandNodes: x y\n')
+>>>>>>> a1261b4... New home for eta and v
 		for i in range(nNodes):
 			loc = nodes[i]['loc']
 			f.write('%i %.2f %.2f %.6f\n' % (i, loc[0], loc[1], nodes[i]['prob']))
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 		f.write('#Bases: x y NumAmbs\n')
 =======
 		f.write('#Bases\n')
 >>>>>>> 286f77c... Continuous coordinates
+=======
+		f.write('#Bases: x y NumAmbs\n')
+>>>>>>> a1261b4... New home for eta and v
 		for j in range(nBases):
 			loc = bases[j]['loc']
 			f.write('%i %.2f %.2f %i\n' % (j, loc[0], loc[1], bases[j]['ambs']))
@@ -51,11 +63,16 @@ def readNetwork(networkPath):
 		nNodes = int(line[0])
 		nBases = int(line[1])
 <<<<<<< HEAD
+<<<<<<< HEAD
 		Tunit  = float(line[2])
 		Tresp  = float(line[3])
 =======
 		Tresp  = float(line[2])
 >>>>>>> 286f77c... Continuous coordinates
+=======
+		Tunit  = float(line[2])
+		Tresp  = float(line[3])
+>>>>>>> a1261b4... New home for eta and v
 
 		# Reading nodes
 		tmp = f.readline()
@@ -74,10 +91,14 @@ def readNetwork(networkPath):
 			bases[j]['ambs'] = int(line[3])
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	return SvcArea(nodes, bases, Tunit, Tresp)
 =======
 	return SvcArea(nodes, bases, Tresp)
 >>>>>>> 286f77c... Continuous coordinates
+=======
+	return SvcArea(nodes, bases, Tunit, Tresp)
+>>>>>>> a1261b4... New home for eta and v
 
 def heatmap(mapPath, sizeX, sizeY, grid, nodes, bases, minorAx=-1, majorAx=-1):
 	nX   = sizeX // grid

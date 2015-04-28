@@ -13,9 +13,13 @@ sizeX = 9
 sizeY = 9
 Tresp = 4
 <<<<<<< HEAD
+<<<<<<< HEAD
 Tunit = 1.0
 =======
 >>>>>>> 286f77c... Continuous coordinates
+=======
+Tunit = 1.0
+>>>>>>> a1261b4... New home for eta and v
 grid  = 1.0
 
 # Nodes: center of each cell in 9x9 grid
@@ -45,8 +49,12 @@ for i in nodes:
 		nodes[i]['prob'] += sz[j]*bvni(mu[j], sg[j], (loc[0], loc[1]), grid/2)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 writeNetwork(networkPath, nodes, bases, Tunit, Tresp)
 =======
 writeNetwork(networkPath, nodes, bases, Tresp)
 >>>>>>> 286f77c... Continuous coordinates
+=======
+writeNetwork(networkPath, nodes, bases, Tunit, Tresp)
+>>>>>>> a1261b4... New home for eta and v
 heatmap(heatPath, sizeX, sizeY, grid, nodes, bases, minorAx=1, majorAx=3)

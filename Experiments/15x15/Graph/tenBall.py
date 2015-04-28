@@ -1,7 +1,10 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 import numpy as np
 >>>>>>> 286f77c... Continuous coordinates
+=======
+>>>>>>> a1261b4... New home for eta and v
 from os.path import dirname, realpath, join
 from ....Methods.network import writeNetwork, heatmap, bivariateNormalIntegral as bvni	
 
@@ -16,11 +19,16 @@ heatPath    = join(basePath, heatFile)
 sizeX = 15
 sizeY = 15
 <<<<<<< HEAD
+<<<<<<< HEAD
 Tunit = 2.5
 Tresp = 9
 =======
 Tresp = 5
 >>>>>>> 286f77c... Continuous coordinates
+=======
+Tunit = 2.5
+Tresp = 9
+>>>>>>> a1261b4... New home for eta and v
 grid  = 1.0
 
 # Nodes: center of each cell in 15x15 grid
@@ -71,8 +79,12 @@ for i in nodes:
 		nodes[i]['prob'] += sz[j]*bvni(mu[j], sg[j], (loc[0], loc[1]), grid/2)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 writeNetwork(networkPath, nodes, bases, Tunit, Tresp)
 =======
 writeNetwork(networkPath, nodes, bases, Tresp)
 >>>>>>> 286f77c... Continuous coordinates
+=======
+writeNetwork(networkPath, nodes, bases, Tunit, Tresp)
+>>>>>>> a1261b4... New home for eta and v
 heatmap(heatPath, sizeX, sizeY, grid, nodes, bases, minorAx=1, majorAx=3)
