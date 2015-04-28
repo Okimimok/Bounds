@@ -1,11 +1,6 @@
 import numpy as np
 
 class SvcArea():
-	# Comment inserted here!
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> a1261b4... New home for eta and v
 	def __init__(self, nodes, bases, Tunit, Tresp):
 		# Tunit : Time needed (min.) to travel one unit in the network
 		# Tresp : Response time threshold
@@ -14,16 +9,6 @@ class SvcArea():
 		self.A     = sum([bases[j]['ambs'] for j in bases])
 		self.Tunit = Tunit
 		self.Tresp = Tresp
-<<<<<<< HEAD
-=======
-	def __init__(self, nodes, bases, Tresp):
-		self.nodes	  = nodes
-		self.bases	  = bases
-		self.A        = sum([bases[j]['ambs'] for j in bases])
-		self.Tresp  = Tresp
->>>>>>> 286f77c... Continuous coordinates
-=======
->>>>>>> a1261b4... New home for eta and v
 		self.__buildDist()
 		self.__buildB()
 		self.__buildNBdist()
@@ -66,18 +51,9 @@ class SvcArea():
 			self.__NBdist[i] = self.dist[i][self.__BA[i][0]]
 
 	def distance(self, x, y):
-<<<<<<< HEAD
-<<<<<<< HEAD
 		# Outputs Manhattan travel time (min.) between two pts in the network 
 		return (abs(x[0] - y[0]) + abs(x[1] - y[1]))*self.Tunit
-=======
-		# Outputs Manhattan distance between two points x and y in R^2
-		return abs(x[0] - y[0]) + abs(x[1] - y[1])
->>>>>>> 286f77c... Continuous coordinates
-=======
-		# Outputs Manhattan travel time (min.) between two pts in the network 
-		return (abs(x[0] - y[0]) + abs(x[1] - y[1]))*self.Tunit
->>>>>>> a1261b4... New home for eta and v
+
 			
 	def getNodes(self):
 		return self.nodes
