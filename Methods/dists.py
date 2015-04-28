@@ -25,3 +25,13 @@ def readSvcDist(filePath):
 			probs[i] = float(line[1])
 
 	return SvcDist(vals, probs)
+
+def readGradFile(gradPath):
+	with open(gradPath, 'r') as f:
+		T     = int(f.readline())
+		gamma = np.zeros(T+1)
+		for t in range(T+1):
+			line     = f.readline().split()
+			gamma[t] = float(line[1])
+
+	return gamma

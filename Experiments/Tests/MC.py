@@ -5,9 +5,9 @@ from random import seed
 from os.path import abspath, dirname, realpath, join
 from ...Methods.network import readNetwork	
 from ...Methods.sample import confInt
-from ...Methods.dists import readSvcDist
 from ...Components.ArrStream import ArrStream
 from ...Components.SamplePath import SamplePath
+from ...Components.SvcDist import SvcDist
 from ...Models import PIP2
 
 def main():
@@ -28,10 +28,9 @@ def main():
 	T        = cp['inputs'].getint('T')
 	N        = cp['inputs'].getint('N')
 	prob     = cp['inputs'].getfloat('prob')
-	gamma    = eval(cp['inputs']['gamma'])
 	
 	# Service distribution
-	sdist = readSvcDist(sdPath)
+	sdist = SvcDist(sdPath=sdPath)
 	
 	# System components: network, arrival patterns, penalty
 	svca = readNetwork(networkPath)
@@ -56,7 +55,7 @@ def main():
 		if (k+1)% freq == 0: print('Iteration %i' % (k+1))
 	
 		omega	  = SamplePath(svca, astr, sdist)
-		p		  = PIP2.ModelInstance(svca, astr, omega, gamma)
+		p		  = PIP2.ModelInstance(svca, astr, omega)
 		p.solve(settings)
 		ubObj[k]  = p.getObjective()
 		ubUtil[k] = p.estimateUtilization()	

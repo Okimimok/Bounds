@@ -1,7 +1,7 @@
 from .FutureEventsList import FutureEventsList		
 from math import ceil
 
-def simulate(svca, omega, executeService, debug=False):
+def simulate(svca, omega, executeService, q=0.5, debug=False):
 	# executeService a function handle that takes as input
 	#  
 	# 1) state : Simulation state
@@ -23,6 +23,7 @@ def simulate(svca, omega, executeService, debug=False):
 	state['ambs']  = [bases[j]['ambs'] for j in bases]
 	state['t']	   = 0
 	state['A']	   = sum(state['ambs'])
+	state['q']     = q
 	state['debug'] = debug
 
 	# Summary statistics
@@ -53,12 +54,13 @@ def simulate(svca, omega, executeService, debug=False):
 			print('Time %i' % state['t'])
 			
 			# Print pending service completions, idle ambulances, pending redeploys
-			tmp  = fel.searchEvents('service')
-			if len(tmp) > 0:
+			busy = fel.searchEvents('service')
+			if len(busy) > 0:
 				output = ''
-				for svc in tmp:
-					tmpLoc = str(svca.nodes[svc[2]]['loc'])
-					tmp += tmpLoc + ' <' + str(int(svc[0])) + '> '
+				for svc in busy:
+					blah    = svca.nodes[svc[2]]
+					tmpLoc  = str(svca.nodes[svc[2]]['loc'])
+					output += tmpLoc + ' <' + str(int(svc[0])) + '> '
 				print('Pending service completions: %s' % output)
 			else:
 				print('No ambulances treating patients')
@@ -142,7 +144,7 @@ def executeArrival(state, stats, callInfo, fel, svca):
 				print('Service time %i, call finishes at %i' %\
 								(svc, finishTime))
 				print('%i call(s) served in time, %i late' %\
-								(stats['late'], stats['obj']))
+								(stats['obj'], stats['late']))
 			break
 		
 	if finishTime < 0:

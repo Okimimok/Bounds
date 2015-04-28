@@ -2,20 +2,31 @@ import numpy as np
 
 class SvcDist:
 	# For all things related to the service time distribution. 
-	#	Pmf, cdf, random variate generation. Initialized with two
-	#	vectors: vals (which contains the support) and probs (the
-	#	corresponding probabilities) 
-	#
-	# Assumed that support already sorted in increasing order. 
+	#	Pmf, cdf, random variate generation. 
+	# Can be initialized in one of two ways:
+	#	1) Two vectors: vals (support) and probs (pmf)
+	#      (Assume support sorted in increasing order)
+	#	2) .txt file containing both of the above vectors
 
-	def __init__(self, vals, probs):
-		self.support = vals
-		self.pmf	 = probs
+	def __init__(self, vals=None, probs=None, sdPath=None):
+		if vals is not None:
+			self.support = vals
+			self.pmf     = probs
+			self.__N     = len(vals)
+		
+		elif sdPath is not None:
+			with open(sdPath, 'r') as f:
+				self.__N = int(f.readline())
+				self.support = np.zeros(self.__N, dtype='int64')
+				self.pmf     = np.zeros(self.__N)
+				for i in range(self.__N):
+					line            = f.readline().split()
+					self.support[i] = int(line[0])
+					self.pmf[i]     = float(line[1])
 
 		# Size of support, min and max values
-		self.__N	  = len(vals)
-		self.__minVal = vals[0]
-		self.__maxVal = vals[-1]
+		self.__minVal = self.support[0]
+		self.__maxVal = self.support[-1]
 		self.__buildCumul()
 		self.__buildCDF()
 		self.__computeMean()
@@ -75,4 +86,10 @@ class SvcDist:
 			val = self.__cdf[int(x)]
 
 		return val
-  
+
+	def writeSvcDist(self, sdPath):
+		# Writing distribution to file
+		with open(sdPath, 'w') as f:
+			f.write('%i\n' % self.__N)
+			for i in range(self.__N):
+				f.write('%i %.6f\n' % (self.support[i], self.pmf[i]))

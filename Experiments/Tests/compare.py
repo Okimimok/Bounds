@@ -7,9 +7,7 @@ from ...Methods.sample import confInt
 from ...Methods.dists import readSvcDist
 from ...Upper.maxwell import readEta, readV
 from ...Lower.compliance import readTable
-from ...Upper.maxwell import readEta, readV
-from ...Upper.gradient import fullSearch, solvePIPs
-from ...Components.SvcDist import SvcDist
+from ...Upper.gradient import fullSearch
 from ...Components.ArrStream import ArrStream
 from ...Components.CvgPenalty import CvgPenalty
 from ...Components.SamplePath import SamplePath
@@ -29,7 +27,7 @@ def main():
 	sdFile      = cp['files']['sdFile']
 	tableFile   = cp['files']['tableFile']
 	outputFile  = cp['files']['outputFile']
-	gradFile    = cp['files']['gradFile']
+	#gradFile    = cp['files']['gradFile']
 
 	networkPath = abspath(join(abspath(join(basePath, "..//")), networkFile))
 	sdPath      = abspath(join(abspath(join(basePath, "..//")), sdFile))
@@ -37,7 +35,7 @@ def main():
 	etaPath     = abspath(join(abspath(join(basePath, "..//")), etaFile))
 	tablePath   = abspath(join(abspath(join(basePath, "..//")), tableFile))
 	outputPath  = abspath(join(abspath(join(basePath, "..//")), outputFile))
-	gradPath    = abspath(join(abspath(join(basePath, "..//")), gradFile))
+	#gradPath    = abspath(join(abspath(join(basePath, "..//")), gradFile))
 
 	# Basic inputs
 	seed1 = cp['inputs'].getint('seed1')
@@ -144,13 +142,6 @@ def main():
 			f.write('PenaltyBd %.3f %.3f %.3f\n' %\
 					 (temp3[0], temp3[1], np.average(ub['util'][h])))
 			f.write('MaxwellBd %.3f %.3f\n' % (temp4[0], temp4[1]))
-
-	# Writing gradient to file
-	with open(gradPath, 'w') as f:
-		f.write('%i\n' % T)
-		gamma = penalty.getGamma()
-		for t in range(T+1):
-			f.write('%i %.6f\n' % (t, gamma[t]))
 
 if __name__ == '__main__':
     main()

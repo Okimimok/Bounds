@@ -1,18 +1,6 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 #NumNodes NumBases UnitTravelTime RespThreshold
 81 4 1.000000 4.00
 #DemandNodes: x y
-=======
-#NumNodes NumBases RespThreshold
-81 4 4.00
-#DemandNodes
->>>>>>> 286f77c... Continuous coordinates
-=======
-#NumNodes NumBases UnitTravelTime RespThreshold
-81 4 1.000000 4.00
-#DemandNodes: x y
->>>>>>> a1261b4... New home for eta and v
 0 0.50 0.50 0.023945
 1 0.50 1.50 0.032187
 2 0.50 2.50 0.036445
@@ -94,15 +82,7 @@
 78 8.50 6.50 0.019337
 79 8.50 7.50 0.014386
 80 8.50 8.50 0.008643
-<<<<<<< HEAD
-<<<<<<< HEAD
 #Bases: x y NumAmbs
-=======
-#Bases
->>>>>>> 286f77c... Continuous coordinates
-=======
-#Bases: x y NumAmbs
->>>>>>> a1261b4... New home for eta and v
 0 2.50 2.50 1
 1 2.50 6.50 1
 2 6.50 2.50 1

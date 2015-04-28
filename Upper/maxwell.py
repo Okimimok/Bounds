@@ -85,7 +85,7 @@ def readEta(etaPath):
 	svcDists = {}
 	for m in range(M):
 		pmf = cdfs[m][1:] - cdfs[m][:R-1]
-		svcDists[m] = SvcDist(vals, pmf)
+		svcDists[m] = SvcDist(vals=vals, probs=pmf)
 
 	return svcDists
 

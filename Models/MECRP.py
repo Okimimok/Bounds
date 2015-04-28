@@ -21,14 +21,14 @@ class ModelInstance:
 		###################### DECISION VARIABLES
 		# Number of ambulances to locate at base j, when a ambulances are free
 		x = {}
-		for a in xrange(1, self.A+1):
+		for a in range(1, self.A+1):
 			x[a] = {}
 			for j in self.bases:
 				x[a][j]  = self.m.addVar(lb=0, ub=a, vtype=GRB.INTEGER)
 
 		# Is node i covered by an ambulance in "state" a?
 		y = {}
-		for a in xrange(1, self.A+1):
+		for a in range(1, self.A+1):
 			y[a] = {}
 			for i in self.nodes:
 				y[a][i] = self.m.addVar(lb=0, ub=1, obj=self.w[a]*self.PN[1][i],\
@@ -38,7 +38,7 @@ class ModelInstance:
 
 		###################### CONSTRAINTS
 		# Coverage constraints
-		for a in xrange(1, self.A+1):
+		for a in range(1, self.A+1):
 			for i in self.nodes:
 				expr = LinExpr()
 				for j in self.B[i]:
@@ -46,14 +46,14 @@ class ModelInstance:
 				self.m.addConstr(expr >= y[a][i])
 	
 		# Fleet capacity
-		for a in xrange(1, self.A+1):
+		for a in range(1, self.A+1):
 			expr = LinExpr()
 			for j in self.bases:
 				expr.add(x[a][j], 1)
 			self.m.addConstr(expr == a)
 	
 		# Nesting constraints
-		for a in xrange(1, self.A):
+		for a in range(1, self.A):
 			for j in self.bases:
 				self.m.addConstr(x[a][j] <= x[a+1][j])
 

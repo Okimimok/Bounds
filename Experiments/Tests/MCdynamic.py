@@ -10,7 +10,7 @@ from ...Components.SvcDist import SvcDist
 from ...Components.ArrStream import ArrStream
 from ...Components.SamplePath import SamplePath
 from ...Simulation.lowerAll import simulate as simLB
-from ...Simulation.tablePolicies import compliance
+from ...Simulation.dynamicPolicies import daskinRedeploy
 #import pdb; pdb.set_trace()
 
 def main():
@@ -21,10 +21,8 @@ def main():
 
 	networkFile = cp['files']['networkFile']
 	sdFile      = cp['files']['sdFile']
-	tableFile   = cp['files']['tableFile']
 	networkPath = abspath(join(abspath(join(basePath, "..//")), networkFile))
 	sdPath      = abspath(join(abspath(join(basePath, "..//")), sdFile))
-	tablePath   = abspath(join(abspath(join(basePath, "..//")), tableFile))
 
 	# Basic inputs
 	seed1 = cp['inputs'].getint('seed1')
@@ -41,7 +39,6 @@ def main():
 	astr.updateP(prob)
 
 	# Reading compliance table
-	table = readTable(tablePath)
 	obj   = np.zeros(N)
 	util  = np.zeros(N)
 	late  = np.zeros(N)
@@ -49,6 +46,7 @@ def main():
 	
 	# Displaying progress
 	freq  = cp['log'].getint('freq')
+	debug = cp['log'].getboolean('simDebug')
 	if freq < 0: freq = N+1
 		
 	# Computing bound
@@ -57,7 +55,7 @@ def main():
 		if (i+1)% freq == 0: print('Iteration %i' % (i+1))
 		omega   = SamplePath(svca, astr, svcDist=sdist)
 		lbStats = simLB(svca, omega, lambda state, location, fel, svca:\
-					compliance(state, location, fel, svca, table))
+					daskinRedeploy(state, location, fel, svca), debug=debug) 
 		obj[i]  = lbStats['obj']
 		util[i] = lbStats['util']
 		late[i] = lbStats['late']

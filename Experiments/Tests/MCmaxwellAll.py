@@ -5,8 +5,8 @@ from random import seed
 from ...Methods.network import readNetwork	
 from os.path import abspath, dirname, realpath, join
 from ...Methods.sample import confInt
-from ...Methods.dists import readSvcDist
 from ...Upper.maxwell import readEta, readV
+from ...Components.SvcDist import SvcDist
 from ...Components.ArrStream import ArrStream
 from ...Components.SamplePath import SamplePath
 from ...Models import MMIP2
@@ -33,7 +33,7 @@ def main():
 	prob  = cp['inputs'].getfloat('prob')
 
 	# Service distribution
-	sdist = readSvcDist(sdPath)
+	sdist = SvcDist(sdPath=sdPath)
 
 	# System components: network, arrival patterns, penalty
 	svca = readNetwork(networkPath)
