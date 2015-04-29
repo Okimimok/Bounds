@@ -23,11 +23,18 @@ def buildEta(svcArea, arrStream, svcDist, filePath, debug=False):
 
 	for r in range(maxR + 1):
 		for a in range(1, maxA+1):
-			if debug: print('r : %i of %i, a : %i of %i' % (r, maxR, a, maxA))
-
-			p = MMIP.ModelInstance(svcArea, arrStream, svcDist, a, r)
-			p.solve(settings)
-			eta[r][a] = p.getObjective()
+			# Ceasing to solve IPs if we hit 1 on the cdf
+			if eta[max(r-1,0)][a] >= 1 or eta[r][a-1] >= 1:
+				eta[r][a] = 1
+			else:
+				p = MMIP.ModelInstance(svcArea, arrStream, svcDist, a, r)
+				p.solve(settings)
+				# Preserving monotonicity
+				if r > 0:
+					eta[r][a] = max(p.getObjective(), eta[r][a-1], eta[r-1][a])
+	
+			if debug: print('r : %i of %i, a : %i of %i, Obj = %.4f' %\
+							(r, maxR, a, maxA, eta[r][a]))
 		eta[r][0] = eta[r][1]
 	
 	return eta

@@ -1,10 +1,10 @@
 from ..Models import MECRP, MEXCRP
 
-def buildTable(svcArea, arrStream, svcDist, w):
+def buildTable(svca, astr,  w):
 	# Solving the resulting coverage problems
 	settings = {'OutputFlag' : 0, 'MIPGap' : 0.005}
-	A = svcArea.A
-	p = MECRP.ModelInstance(svcArea, arrStream, A, w)
+	A = svca.A
+	p = MECRP.ModelInstance(svca, astr, A, w)
 	p.solve(settings)
 
 	# Obtaining compliance table
@@ -13,15 +13,15 @@ def buildTable(svcArea, arrStream, svcDist, w):
 
 	for a in range(1, A+1):
 		table[a] = []
-		for j in svcArea.bases:
+		for j in svca.bases:
 			for k in range(int(v['x'][a][j].x)):
 				table[a].append(j)
 
 	return table 
 
-def buildDaskinTable(svcArea, arrStream, svcDist, q, w, settings):
-	A = svcArea.A
-	p = MEXCRP.ModelInstance(svcArea, arrStream, A, q, w)
+def buildDaskinTable(svca, astr, q, w, settings):
+	A = svca.A
+	p = MEXCRP.ModelInstance(svca, astr, A, q, w)
 	p.solve(settings)
 
 	# Obtaining compliance table
@@ -30,7 +30,7 @@ def buildDaskinTable(svcArea, arrStream, svcDist, q, w, settings):
 
 	for a in range(1, A+1):
 		table[a] = []
-		for j in svcArea.bases:
+		for j in svca.bases:
 			for k in range(int(v['x'][a][j].x)):
 				table[a].append(j)
 

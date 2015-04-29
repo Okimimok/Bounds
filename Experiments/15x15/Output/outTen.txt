@@ -1,0 +1,17 @@
+3 4
+LowerBd PerfectInfo PenaltyBd MaxwellBd
+0.080
+LowerBd 76.510 0.161 0.410 38.336 0.782
+PerfectInfo 112.140 0.240 0.383
+PenaltyBd 112.884 0.181 0.285
+MaxwellBd 102.055 0.187
+0.100
+LowerBd 82.474 0.179 0.521 58.010 3.668
+PerfectInfo 139.330 0.244 0.470
+PenaltyBd 136.801 0.154 0.332
+MaxwellBd 122.389 0.178
+0.120
+LowerBd 82.284 0.184 0.624 79.456 11.430
+PerfectInfo 166.446 0.264 0.549
+PenaltyBd 158.075 0.139 0.368
+MaxwellBd 140.698 0.178

@@ -46,9 +46,7 @@ class SvcArea():
 		# distNBDist[i] = Distance from node i to nearest base
 		# The bases in B have already been sorted in order of increasing
 		#	distance from i, so just need to get first element of B[i]
-		self.__NBdist = {}
-		for i in self.nodes: 
-			self.__NBdist[i] = self.dist[i][self.__BA[i][0]]
+		self.__NBdist = [self.dist[i][self.__BA[i][0]] for i in self.nodes]
 
 	def distance(self, x, y):
 		# Outputs Manhattan travel time (min.) between two pts in the network 

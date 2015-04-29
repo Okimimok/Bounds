@@ -1,5 +1,4 @@
-import sys
-import configparser
+import sys, time, configparser
 import numpy as np
 from random import seed
 from ...Methods.network import readNetwork	
@@ -56,6 +55,7 @@ def main():
 	# Matt Maxwell's upper bound
 	seed(seed1)
 	obj = np.zeros(N)
+	start = time.clock()
 	for i in range(N):
 		if (i+1)% freq == 0: print('Iteration %i' % (i+1))
 			
@@ -63,8 +63,10 @@ def main():
 		m     = MMIP2.ModelInstance(svca, astr, omega, v)
 		m.solve(settings)
 		obj[i] = m.getObjective()
+	rt = time.clock() - start
 
 	print('Maxwell Bound: %.3f +/- %.3f' % confInt(obj))
+	print('Runtime      : %.3f sec (%.3f per iter)' % (rt, rt/N))
 
 if __name__ == '__main__':
     main()

@@ -13,6 +13,8 @@ class SamplePath():
 		self.svcDist   = svcDist
 		self.mxwDist   = mxwDist
 		self.__buildCalls()
+		self.callTimes = np.array(sorted(self.calls.keys()))
+		self.numCalls  = len(self.callTimes)
 	
 	def __buildCalls(self):
 		# Generate sample path of calls

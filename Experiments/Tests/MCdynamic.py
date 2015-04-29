@@ -1,5 +1,4 @@
-import sys
-import configparser
+import sys, time, configparser
 import numpy as np
 from random import seed
 from ...Methods.network import readNetwork	
@@ -33,16 +32,21 @@ def main():
 	# Service distribution
 	sdist = SvcDist(sdPath=sdPath)
 
+	# Params for MEXCLP-based redeployment policy
+	q       = cp['mexclp'].getfloat('q')
+	etaVals = eval(cp['mexclp']['eta'])
+	J       = len(etaVals)
+
 	# System components: network, arrival patterns, penalty
 	svca = readNetwork(networkPath)
 	astr = ArrStream(svca, T)
 	astr.updateP(prob)
 
 	# Reading compliance table
-	obj   = np.zeros(N)
-	util  = np.zeros(N)
-	late  = np.zeros(N)
-	miss  = np.zeros(N)
+	obj   = np.zeros((J, N))
+	util  = np.zeros((J, N))
+	late  = np.zeros((J, N))
+	miss  = np.zeros((J, N))
 	
 	# Displaying progress
 	freq  = cp['log'].getint('freq')
@@ -51,20 +55,30 @@ def main():
 		
 	# Computing bound
 	seed(seed1)
+	start = time.clock()
 	for i in range(N):
 		if (i+1)% freq == 0: print('Iteration %i' % (i+1))
 		omega   = SamplePath(svca, astr, svcDist=sdist)
-		lbStats = simLB(svca, omega, lambda state, location, fel, svca:\
-					daskinRedeploy(state, location, fel, svca), debug=debug) 
-		obj[i]  = lbStats['obj']
-		util[i] = lbStats['util']
-		late[i] = lbStats['late']
-		miss[i] = lbStats['miss']
+		for j in range(J):
+			lbStats = simLB(svca, omega, lambda state, location, fel, svca:\
+						daskinRedeploy(state, location, fel, svca), debug=debug,\
+							q=q, eta=etaVals[j]) 
 
-	print('Objective    : %.3f +/- %.3f' % confInt(obj))
-	print('Utilization  : %.3f +/- %.3f' % confInt(util))
-	print('Late Calls   : %.3f +/- %.3f' % confInt(late))
-	print('Missed Calls : %.3f +/- %.3f' % confInt(miss))
+			obj[j][i]  = lbStats['obj']
+			util[j][i] = lbStats['util']
+			late[j][i] = lbStats['late']
+			miss[j][i] = lbStats['miss']
+
+
+	rt  = time.clock() - start
+	for j in range(J):
+		print('Distance parameter eta = %.3f' % etaVals[j])
+		print('Objective    : %.3f +/- %.3f' % confInt(obj[j]))
+		print('Utilization  : %.3f +/- %.3f' % confInt(util[j]))
+		print('Late Calls   : %.3f +/- %.3f' % confInt(late[j]))
+		print('Missed Calls : %.3f +/- %.3f' % confInt(miss[j]))
+
+	print('Runtime      : %.3f sec (%.3f per iter)' % (rt, rt/(J*N)))
 
 if __name__ == '__main__':
 	main()

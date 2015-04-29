@@ -1,5 +1,4 @@
-import sys
-import configparser
+import sys, time, configparser
 import numpy as np
 from random import seed
 from ...Methods.network import readNetwork	
@@ -53,6 +52,7 @@ def main():
 		
 	# Computing bound
 	seed(seed1)
+	start = time.clock()
 	for i in range(N):
 		if (i+1)% freq == 0: print('Iteration %i' % (i+1))
 		omega   = SamplePath(svca, astr, svcDist=sdist)
@@ -62,11 +62,13 @@ def main():
 		util[i] = lbStats['util']
 		late[i] = lbStats['late']
 		miss[i] = lbStats['miss']
+	rt = time.clock() - start
 
 	print('Objective    : %.3f +/- %.3f' % confInt(obj))
 	print('Utilization  : %.3f +/- %.3f' % confInt(util))
 	print('Late Calls   : %.3f +/- %.3f' % confInt(late))
 	print('Missed Calls : %.3f +/- %.3f' % confInt(miss))
+	print('Runtime      : %.3f sec (%.3f per iter)' % (rt, rt/N))
 
 if __name__ == '__main__':
 	main()

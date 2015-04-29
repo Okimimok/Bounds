@@ -121,13 +121,15 @@ def main():
 		print('Lower Bound         : %.3f +/- %.3f'   % confInt(lb['obj'][h]))
 		print('Perfect Information : %.3f +/- %.3f'   % confInt(pi['obj'][h]))
 		print('Penalized Bound     : %.3f +/- %.3f'   % confInt(ub['obj'][h]))
-		print('Maxwell Bound       : %.3f +/- %.3f\n' % confInt(mx['obj'][h]))
-
-	print('Search took %.4f seconds' % (time.clock() - start))
+		print('Mod. Maxwell Bound  : %.3f +/- %.3f\n' % confInt(mx['obj'][h]))
+	
+	rt = time.clock() - start
+	print('Search took %.4f seconds' % rt)
 
 	# Writing results to file
 	with open(outputPath, 'w') as f:
-		f.write('%i 4\n' % H)
+		f.write('%i 4 %.2f %i\n' % (H, rt, N))
+		f.write('LowerBd PerfectInfo PenaltyBd ModMaxBd\n')
 		for h in range(H):
 			f.write('%.3f\n' % probs[h])
 			temp1 = confInt(lb['obj'][h])
@@ -141,7 +143,7 @@ def main():
 					 (temp2[0], temp2[1], np.average(pi['util'][h])))
 			f.write('PenaltyBd %.3f %.3f %.3f\n' %\
 					 (temp3[0], temp3[1], np.average(ub['util'][h])))
-			f.write('MaxwellBd %.3f %.3f\n' % (temp4[0], temp4[1]))
+			f.write('ModMaxBd %.3f %.3f\n' % (temp4[0], temp4[1]))
 
 if __name__ == '__main__':
     main()

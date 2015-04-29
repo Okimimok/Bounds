@@ -1,15 +1,16 @@
 from .FutureEventsList import FutureEventsList		
 from math import ceil
 
-def simulate(svca, omega, executeService, q=0.5, debug=False):
+def simulate(svca, omega, executeService, q=0.5, debug=False, eta=0):
 	# executeService a function handle that takes as input
-	#  
-	# 1) state : Simulation state
+	# 1) state    : Simulation state
 	# 2) location : The location at which a service completion occurs
 	# 3) fel	  : Future events list
-	# 4) svca  : Object containing network data (distances, neighbor-
-	#				 hoods, locations, etc.)
-	# and then selects a base to which to redeploy the ambulance
+	# 4) svca     : Network data object (w/ locs, dists, neighborhoods, etc.)
+	# ...and then selects a base to which to redeploy the ambulance
+	#
+	# eta and q are parameters used for MEXCLP-based dynamic redeployment 
+	#	policy. Check appropriate .py file.
 	
 	bases = svca.getBases()
 	calls = omega.getCalls()
@@ -22,9 +23,10 @@ def simulate(svca, omega, executeService, q=0.5, debug=False):
 	state = {}
 	state['ambs']  = [bases[j]['ambs'] for j in bases]
 	state['t']	   = 0
-	state['A']	   = sum(state['ambs'])
+	state['A']	   = svca.A
 	state['q']     = q
 	state['debug'] = debug
+	state['eta']   = eta
 
 	# Summary statistics
 	stats = {}

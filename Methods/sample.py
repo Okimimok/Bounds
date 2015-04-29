@@ -1,6 +1,7 @@
 from random import random
 from scipy.stats import norm
 from numpy import average, std
+from bisect import bisect_left
 
 def discreteN(probs):
     # Given a list of values of length N, with returns a sample of a RV X with
@@ -45,3 +46,15 @@ def confInt(A, level=0.95):
     hw = z*std(A)/(n**0.5)
 
     return mu, hw
+
+# Given an already sorted  array/list A, and a value x, returns True if x can
+#   be found within A, and False otherwise. 
+# n denotes the length of the array
+def binary_search(A, x, n=None):   
+	if n is not None:
+		n = len(A)
+	pos = bisect_left(A, x, 0, n)          
+	if pos != n and A[pos] == x:
+		return True
+	else:
+		return False

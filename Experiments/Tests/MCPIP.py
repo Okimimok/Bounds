@@ -7,7 +7,7 @@ from ...Methods.sample import confInt
 from ...Components.ArrStream import ArrStream
 from ...Components.SamplePath import SamplePath
 from ...Components.SvcDist import SvcDist
-from ...Models import PIP2
+from ...Models import PIP
 
 def main():
 	basePath   = dirname(realpath(__file__))
@@ -27,6 +27,7 @@ def main():
 	T        = cp['inputs'].getint('T')
 	N        = cp['inputs'].getint('N')
 	prob     = cp['inputs'].getfloat('prob')
+	gamma    = eval(cp['inputs']['gamma'])
 	
 	# Service distribution
 	sdist = SvcDist(sdPath=sdPath)
@@ -47,7 +48,6 @@ def main():
 
 	# Monte Carlo Simulation
 	ubObj  = np.zeros(N)
-	ubUtil = np.zeros(N)
 	
 	seed(randSeed)
 	start = time.clock()
@@ -55,10 +55,9 @@ def main():
 		if (k+1)% freq == 0: print('Iteration %i' % (k+1))
 	
 		omega	  = SamplePath(svca, astr, sdist)
-		p		  = PIP2.ModelInstance(svca, astr, omega)
+		p		  = PIP.ModelInstance(svca, astr, omega, gamma)
 		p.solve(settings)
 		ubObj[k]  = p.getObjective()
-		ubUtil[k] = p.estimateUtilization()	
 
 	rt = time.clock() - start
 	print('Objective   : %.3f +/- %.3f' % confInt(ubObj))

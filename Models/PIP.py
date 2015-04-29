@@ -1,155 +1,226 @@
-from gurobipy import * 
+from gurobipy import Model, GRB, LinExpr 
+from ..Methods.sample import binary_search 
 import numpy as np
 
 # Perfect information problem with one-step look-ahead penalty. Involves
 #	 a big-M constraint. Don't use for problems involving more than 2 or 3 
 #	 ambulances. Warm start not implemented yet (and probably won't be).
+#
+# Time-based penalty multipliers only!
 
-def solve(svcArea, arrStream, omega, penalty, flag=False, grad=False):
-	# Unpacking relevant problem instance parameters
-	bases = svcArea.bases
-	nodes = svcArea.nodes
-	B	  = svcArea.getB()
-	P     = arrStream.getP()
-	RP	  = arrStream.getRP()
-	T	  = omega.T
-	calls = omega.getCalls()
-	Q	  = omega.getQ()
-	
-	# The penalty
-	gamma = penalty.getGamma()
-	
-	# Number of ambulances in system
-	A  = sum([bases[j]['alloc'] for j in bases])
-	
-	########################################################
-	###################### BEGIN MODEL
-	########################################################
-	m = Model()
+class ModelInstance:
+	def __init__(self, svca, astr, omega, gamma=None):
+		self.bases     = svca.bases
+		self.nodes     = svca.nodes
+		self.A         = svca.A 
+		self.B         = svca.getB()
+		self.P         = astr.getP()
+		self.T         = omega.T
+		self.calls     = omega.getCalls()
+		self.callTimes = omega.callTimes
+		self.numCalls  = omega.numCalls
+		self.Q         = omega.getQ()
 
-	###################### DECISION VARIABLES
-	# When call c arrives, can an ambulance respond?
-	v = {}
-	for c in calls:
-		loc  = calls[c]['loc']
-		v[c] = m.addVar(lb=0, ub=1, obj= -gamma[c], vtype=GRB.BINARY)
+		# Create model object and dictionary of decision vars
+		self.formulate(gamma)
 
-	# At time t, can system respond to call arriving at node i?
-	w = {}
-	for t in xrange(1, T+1):
-		w[t] = {}
-		for i in nodes:
-			w[t][i] = m.addVar(lb=0, ub=1, obj=gamma[t]*P[t][i],\
+	def formulate(self, gamma):
+		# Formulates the integer program, by defining the appropriate decision
+		#	variables and constraints. Objective function values for the x-vars
+		#	are set, but those for the y-vars are kept to zero. 
+		#
+		# Returns the resulting model, as well as a dictionary containing 
+		#	decision variables.
+		self.m = Model()
+
+		###################### DECISION VARIABLES
+		# Respond to call c with ambulance from base i, and redeploy to j?
+		x = {}	
+		for t in self.callTimes:
+			x[t] = {}
+			for j in self.B[self.calls[t]['loc']]:
+				x[t][j] = {}
+				for k in self.bases:
+					x[t][j][k] = self.m.addVar(lb=0, ub=1, obj=1, vtype=GRB.BINARY)
+	
+		# At time t, the number of idle ambulances at base j
+		y = {}
+		for t in range(1, self.T+1):
+			y[t] = {}
+			for j in self.bases:
+				y[t][j] = self.m.addVar(lb=0, ub=self.A, vtype=GRB.INTEGER)
+			
+		self.m.update()
+
+		# When call c arrives, can an ambulance respond?
+		v = {}
+		if gamma is not None:
+			for t in self.callTimes:
+				v[t] = self.m.addVar(lb=0, ub=1, obj=-gamma[t], vtype=GRB.BINARY)
+		else:
+			for t in self.callTimes:
+				v[t] = self.m.addVar(lb=0, ub=1, vtype=GRB.BINARY)
+
+		# At time t, can system respond to call arriving at node i?
+		w = {}
+		if gamma is not None:
+			for t in range(1, self.T+1):
+				w[t] = {}
+				for i in self.nodes:
+					w[t][i] = self.m.addVar(lb=0, ub=1, obj=gamma[t]*self.P[t][i],\
 									   vtype=GRB.BINARY)
-
-	# Respond to call c with ambulance from base j, and redeploy to k?
-	x = {}	
-	for c in calls:
-		x[c] = {}
-		for j in B[calls[c]['loc']]:
-			x[c][j] = {}
-			for k in bases:
-				x[c][j][k] = m.addVar(lb=0, ub=1, obj=1, vtype=GRB.BINARY)
-
-	# At time t, the number of idle ambulances at base j
-	y = {}
-	if gamma.ndim == 1:
-		for t in xrange(T+1):
-			y[t] = {}
-			
-			for j in bases:
-				if t in calls and j in B[calls[t]['loc']]:
-					y[t][j] = m.addVar(lb=0, ub=A, vtype=GRB.INTEGER,\
-							obj = gamma[t]*(RP[t][j]-1))
-				else:
-					y[t][j] = m.addVar(lb=0, ub=A, vtype=GRB.INTEGER,\
-							obj = gamma[t]*RP[t][j])
-	else:
-		for t in xrange(T+1):
-			y[t] = {}
-			
-			for j in bases:
-				if t in calls and j in B[calls[t]['loc']]:
-					y[t][j] = m.addVar(lb=0, ub=A, vtype=GRB.INTEGER,\
-							obj = gamma[t][j]*(RP[t][j]-1))
-				else:
-					y[t][j] = m.addVar(lb=0, ub=A, vtype=GRB.INTEGER,\
-							obj = gamma[t][j]*RP[t][j])
+		else:
+			for t in range(1, self.T+1):
+				w[t] = {}
+				for i in self.nodes:
+					w[t][i] = self.m.addVar(lb=0, ub=1, vtype=GRB.BINARY)
 				
-	# Objective: To minimize calls not receiving timely response
-	m.setParam('OutputFlag', flag)
-	m.modelSense = GRB.MAXIMIZE
-	m.update()
+		self.m.update()	
 
-	######################### CONSTRAINTS
-	# At most one response to a call
-	for c in calls:
-		loc = calls[c]['loc']
-		m.addConstr(quicksum(quicksum(x[c][j][k] for j in B[loc])\
-												 for k in bases) <= 1)
+		######################### CONSTRAINTS
+		# At most one response to a call
+		for t in self.callTimes:
+			expr = LinExpr()
+			loc  = self.calls[t]['loc']
+			for j in self.B[loc]:
+				for k in self.bases:
+					expr.add(x[t][j][k], 1)
+			self.m.addConstr(expr <= 1)
 
-	# No dispatch unless ambulance idle
-	for c in calls:
-		loc = calls[c]['loc']
-		for j in B[loc]:
-		   m.addConstr(quicksum(x[c][j][k] for k in bases) <= y[c][j])
+		# No dispatch unless ambulance idle
+		for t in self.callTimes:
+			loc  = self.calls[t]['loc']
+			for j in self.B[loc]:
+				expr = LinExpr()
+				for k in self.bases:
+					expr.add(x[t][j][k], 1)
+				self.m.addConstr(expr <= y[t][j])
 
-	# Flow balance for idle ambulances
-	for t in xrange(T+1):
-		if t > 0: 
-			# Did a call arrive during the last time period?
-			if (t-1) in calls:
-				loc = calls[t-1]['loc']
-				for j in bases:
-					# Could base j have dispatched an ambulance to the call?
-					if j in B[loc]:
-						m.addConstr(y[t][j] == y[t-1][j] \
-							+ quicksum([x[s][k][j] for (s,k) in Q[t][j]])\
-							- quicksum([x[t-1][j][k] for k in bases]))
-					else:
-						m.addConstr(y[t][j] == y[t-1][j] \
-							+ quicksum([x[s][k][j] for (s,k) in Q[t][j]]))	   
+		# Determining values for w-variables
+		for t in range(1, self.T+1):
+			for i in self.nodes:
+				expr = LinExpr()
+				for j in self.B[i]:
+					expr.add(y[t][j], 1)
+				self.m.addConstr(expr >= w[t][i])
+
+		# Constraints for v-variables
+		for t in self.callTimes:
+			loc  = self.calls[t]['loc']
+			expr = LinExpr()
+			for j in self.B[loc]:
+				expr.add(y[t][j], 1)
+			self.m.addConstr(expr <= self.A*v[t])
+
+		# Flow balance for idle ambulances
+		for t in range(self.T):
+			if binary_search(self.callTimes, t, n=self.numCalls):
+				loc = self.calls[t]['loc']
+				for j in self.bases:
+					expr = LinExpr(1, y[t][j])
+					for (s, l) in self.Q[t+1][j]:
+						expr.add(x[s][l][j], 1)
+
+					if j in self.B[loc]:
+						for k in self.bases:
+							expr.add(x[t][j][k], -1)
+
+					self.m.addConstr(expr == y[t+1][j])
+			elif t > 0:
+				for j in self.bases: 
+					expr = LinExpr(1, y[t][j])
+					for (s, k) in self.Q[t+1][j]:
+						expr.add(x[s][k][j], 1)
+					self.m.addConstr(expr == y[t+1][j])
 			else:
-				for j in bases:
-					m.addConstr(y[t][j] == y[t-1][j] \
-						+ quicksum([x[s][k][j] for (s,k) in Q[t][j]]))
-		else:
-			for j in bases:
-				m.addConstr(y[t][j] == bases[j]['alloc'])
+				for j in self.bases:
+					self.m.addConstr(y[1][j] == self.bases[j]['ambs'])
+		
+		######################## Valid Inequalities
+		# Linking v-variables and w-varaibles
+		'''
+		for t in self.callTimes:
+			loc = self.calls[t]['loc']
+			self.m.addConstr(v[t] == w[t][loc])
+		'''
 
-	# Determining values for w-variables
-	for t in xrange(1, T+1):
-		for i in nodes:
-			m.addConstr(w[t][i] <= quicksum(y[t][j] for j in B[i]))
+		# v_t = 1 if dispatch made
+		for t in self.callTimes:
+			loc  = self.calls[t]['loc']
+			expr = LinExpr()
+			for j in self.B[loc]:
+				for k in self.bases:
+					expr.add(x[t][j][k], 1)
+			self.m.addConstr(v[t] >= expr)
+		'''
+		# Constraints on v-variables whenever calls don't arrive
+		for t in self.callTimes:
+			if t > 1 and t-1 not in self.callTimes:   
+				loc = self.calls[t]['loc']
+				self.m.addConstr(v[t] >= w[t-1][loc])
+		'''
+		self.dvars = {'v': v, 'w': w, 'x': x, 'y': y}
+		self.m.update()
 
-	# Constraints for v-variables
-	for c in calls:
-		loc = calls[c]['loc']
-		m.addConstr(A*v[c] >= quicksum(y[c][j] for j in B[loc]))
+	def updateObjective(self, gamma):
+		# Takes as input:
+		# m		: An already formulated PIP instance (w/ dec vars and constraints)
+		# v		: A dictionary containing its decision varaibles
+		# gamma : Vector of penalty weights 
+		#
+		# Updates the objective function coefficients for the y-variables
+		v  = self.dvars['v']
+		w  = self.dvars['w']
 
- 
-	# Optimal solution, determining response sequence
-	m.setParam('MIPGap', 0.01)
-	m.setParam('TimeLimit', 600)
-	m.optimize()
-	obj		  = m.objVal
+		for t in range(1, self.T+1):
+			for i in self.nodes:
+				w[t][i].setAttr("obj", self.P[t][i]*gamma[t])
+				if binary_search(self.callTimes, t, n=self.numCalls):
+					v[t].setAttr("obj", -gamma[t])
 
-	if grad:
-		# Gradient of objective w.r.t. Lagrange multipliers
-		if gamma.ndim == 1:
-			gradSample = np.zeros(T+1)
-			for t in xrange(T+1):
-				for j in bases:
-					gradSample[t] += y[t][j].x*RP[t][j]
-					if t in calls and j in B[calls[t]['loc']]:
-						gradSample[t] -= y[t][j].x
-		else:
-			gradSample = np.zeros((T+1, len(bases)))
-			for t in xrange(T+1):
-				for j in bases:
-					gradSample[t][j] = y[t][j].x*RP[t][j]
-					if t in calls and j in B[calls[t]['loc']]:
-						gradSample[t][j] -= y[t][j].x
-		return obj, gradSample, m.runTime
-	else:
-		return obj, m.runTime
+		self.m.update()
+
+	def solve(self, settings={}):	
+		# Given a fully-formulated model, as well as solver settings, solves 
+		#	the PIP, and returns the model object associated with the resulting
+		#	optimal solution.
+		# Settings is a dictionary whose keys are model parameters (e.g., MIPGap,
+		#	OutputFlag), and whose values, well, duh.
+	
+		# Putting settings into effect.
+		for key in settings:
+			if key.lower() == 'outputflag':
+				self.m.setParam(key, settings[key])
+				break
+
+		for key in settings:
+			self.m.setParam(key, settings[key])
+
+		self.m.modelSense = GRB.MAXIMIZE
+		self.m.optimize()
+		self.m.fixed()
+
+	def getModel(self):
+		return self.m
+
+	def getDecisionVars(self):
+		return self.dvars
+
+	def getObjective(self):
+		# If the model has already been solved, return objective associated
+		#	 with optimal solution
+		return self.m.objVal
+		
+	def estimateGradient(self):
+		# Given an already solved instance of this IP model, returns the gradient
+		#	estimate arising from this solution.
+		v = self.dvars['v']
+		w = self.dvars['w']
+
+		grad = np.zeros(self.T+1)
+		for t in xrange(1, self.T+1):
+			grad[t] = sum([w[t][i].x*self.P[t][i] for i in self.nodes])
+			if binary_search(self.callTimes, t, n=self.numCalls):
+				grad[t] -= v[t].x
+
+		return grad
