@@ -13,7 +13,7 @@ from ...Simulation.dynamicPolicies import daskinRedeploy
 #import pdb; pdb.set_trace()
 
 def main():
-	basePath    = dirname(realpath(__file__))
+	basePath   = dirname(realpath(__file__))
 	configPath = abspath(join(abspath(join(basePath, "..//")), sys.argv[1]))
 	cp         = configparser.ConfigParser()
 	cp.read(configPath)
@@ -34,7 +34,7 @@ def main():
 
 	# Params for MEXCLP-based redeployment policy
 	q       = cp['mexclp'].getfloat('q')
-	etaVals = eval(cp['mexclp']['eta'])
+	etaVals = eval(cp['mexclp']['etaVals'])
 	J       = len(etaVals)
 
 	# System components: network, arrival patterns, penalty

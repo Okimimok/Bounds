@@ -12,7 +12,8 @@ from ...Components.ArrStream import ArrStream
 from ...Components.CvgPenalty import CvgPenalty
 from ...Components.SamplePath import SamplePath
 from ...Simulation.lowerAll import simulate as simLB
-from ...Simulation.tablePolicies import compliance
+#from ...Simulation.tablePolicies import compliance
+from ...Simulation.dynamicPolicies import daskinRedeploy
 from ...Models import PIP2, MMIP2
 
 def main():
@@ -25,17 +26,17 @@ def main():
 	etaFile     = cp['files']['etaFile']
 	vFile       = cp['files']['vFile']
 	sdFile      = cp['files']['sdFile']
-	tableFile   = cp['files']['tableFile']
 	outputFile  = cp['files']['outputFile']
+	#tableFile   = cp['files']['tableFile']
 	#gradFile    = cp['files']['gradFile']
 
 	networkPath = abspath(join(abspath(join(basePath, "..//")), networkFile))
 	sdPath      = abspath(join(abspath(join(basePath, "..//")), sdFile))
 	vPath       = abspath(join(abspath(join(basePath, "..//")), vFile))
 	etaPath     = abspath(join(abspath(join(basePath, "..//")), etaFile))
-	tablePath   = abspath(join(abspath(join(basePath, "..//")), tableFile))
 	outputPath  = abspath(join(abspath(join(basePath, "..//")), outputFile))
 	#gradPath    = abspath(join(abspath(join(basePath, "..//")), gradFile))
+	#tablePath   = abspath(join(abspath(join(basePath, "..//")), tableFile))
 
 	# Basic inputs
 	seed1 = cp['inputs'].getint('seed1')
@@ -65,7 +66,11 @@ def main():
 	v      = readV(vPath) 
 
 	# Compliance table	
-	table = readTable(tablePath)	
+	# table = readTable(tablePath)	
+
+	# MEXCLP-based redeployment policy
+	q   = cp['mexclp'].getfloat('q')
+	eta = eval(cp['mexclp']['eta'])
 
 	# Solver settings    
 	settings = {}
@@ -85,6 +90,7 @@ def main():
 
 	start = time.clock()
 	for h in range(H):
+		penalty.setStepSizes(steps)
 		print('Arrival probability = %.3f' % probs[h])
 		astr.updateP(probs[h])
 		fullSearch(svca, astr, sdist, penalty, PIP2, settings, N, seed1, iters,\
@@ -101,8 +107,8 @@ def main():
 			m.solve(settings)
 			mx['obj'][h][i] = m.getObjective()
 
-			lbStats  = simLB(svca, omega, lambda state, location, fel, svcea:\
-						compliance(state, location, fel, svca, table))
+			lbStats = simLB(svca, omega, lambda state, location, fel, svca:\
+						daskinRedeploy(state, location, fel, svca),	q=q, eta=eta) 
 			lb['obj'][h][i]  = lbStats['obj']
 			lb['util'][h][i] = lbStats['util']
 			lb['late'][h][i] = lbStats['late']
