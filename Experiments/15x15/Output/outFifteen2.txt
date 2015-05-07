@@ -1,22 +1,22 @@
 4 4
-LowerBd PerfectInfo PenaltyBd MaxwellBd
+LowerBd PerfectInfo PenaltyBd ModMaxBd
 0.080
 LowerBd 98.718 0.202 0.260 16.906 0.004
 PerfectInfo 112.516 0.244 0.261
 PenaltyBd 112.572 0.244 0.236
-MaxwellBd 112.910 0.235
+ModMaxBd 112.910 0.235
 0.100
 LowerBd 117.734 0.200 0.331 26.400 0.018
 PerfectInfo 140.160 0.248 0.324
 PenaltyBd 140.251 0.247 0.273
-MaxwellBd 140.125 0.238
+ModMaxBd 140.125 0.238
 0.120
 LowerBd 134.032 0.218 0.406 38.968 0.170
 PerfectInfo 168.558 0.280 0.389
 PenaltyBd 168.592 0.279 0.333
-MaxwellBd 167.082 0.254
+ModMaxBd 167.082 0.254
 0.140
 LowerBd 144.112 0.204 0.483 57.110 0.794
 PerfectInfo 196.548 0.293 0.452
 PenaltyBd 196.560 0.292 0.398
-MaxwellBd 192.965 0.260
+ModMaxBd 192.965 0.260

@@ -14,16 +14,16 @@ def readProbs(probPath):
 		f.readline()	
 		# Changepoint times
 		line   = f.readline().split()
-		chgPts = np.array([float(entry) for entry in line])
+		chgPts = np.array([int(entry) for entry in line], dtype='int64')
 		
 		# Comment line
 		f.readline()
 		# Populate probability matrix
 		for i in range(N):
-			line        = f.readline.split()
+			line        = f.readline().split()
 			probs[:, i] = [float(entry) for entry in line]
 			
-		return probs, chgPts
+		return chgPts, probs
 	
 def writeProbs(probs, chgPts, probPath):
 	C, N = probs.shape
@@ -37,4 +37,7 @@ def writeProbs(probs, chgPts, probPath):
 		f.write('\n')
 		
 		f.write('#ArrivalProbs\n')
-		for 
+		for i in range(N):
+			for c in range(C):
+				f.write('%.5f ' % probs[c][i])
+			f.write('\n')

@@ -35,8 +35,9 @@ def main():
 	sdist = SvcDist(sdPath=sdPath)
 	
 	# System components: network, arrival patterns, penalty
-	svca = readNetwork(networkPath)
-	astr = NonstatArrStream(svca, T)
+	svca          = readNetwork(networkPath)
+	chgPts, probs = readProbs(nonstatPath)
+	astr          = NonstatArrStream(svca, T, chgPts, probs)
 	astr.updateP(prob)
 	
 	# Solver settings	 
@@ -66,7 +67,6 @@ def main():
 	rt = time.clock() - start
 	print('Objective   : %.3f +/- %.3f' % confInt(ubObj))
 	print('Runtime     : %.3f sec (%.3f per iter)' % (rt, rt/N))
-				
 	
 if __name__ == '__main__':
 	main()

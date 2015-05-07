@@ -1,0 +1,17 @@
+3 4 36288.66 500
+LowerBd PerfectInfo PenaltyBd ModMaxBd
+0.020
+LowerBd 22.214 0.100 0.108 7.066 0.000
+PerfectInfo 28.620 0.122 0.139
+PenaltyBd 28.700 0.118 0.118
+ModMaxBd 26.265 0.102
+0.030
+LowerBd 31.534 0.117 0.164 11.930 0.000
+PerfectInfo 42.580 0.157 0.208
+PenaltyBd 42.695 0.148 0.169
+ModMaxBd 37.598 0.122
+0.040
+LowerBd 39.552 0.124 0.224 18.318 0.036
+PerfectInfo 56.938 0.178 0.279
+PenaltyBd 56.711 0.158 0.223
+ModMaxBd 48.222 0.128

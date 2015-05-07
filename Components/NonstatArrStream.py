@@ -13,10 +13,10 @@ import numpy as np
 
 class NonstatArrStream():
 	def __init__(self, svcArea, T, chgPts, probs):
-		self.T	        = T
+		self.T	       = T
 		self.C         = len(chgPts)
 		self.__chgPts  = chgPts
-		np.append(self.__chgpts, T+1)
+		self.__chgPts  = np.append(self.__chgPts, T+1)
 		self.probs     = probs
 		self.__svcArea = svcArea
 		self.__buildP()

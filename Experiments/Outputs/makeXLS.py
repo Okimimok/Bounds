@@ -41,7 +41,7 @@ def main():
 		# Interlude: Create spreadsheet
 		w = xlwt.Workbook()
 		ws = w.add_sheet('Results')
-		#
+		
 		# ------First row
 		# Four columns for lower bd: (obj, util, late, missed)
 		ws.write(0, 0, 'P(Arrival)', styleB)
@@ -52,7 +52,8 @@ def main():
 		for j in range(1, nBnds):
 			ws.write_merge(0, 0, cnt, cnt+1, names[j], styleB)
 			cnt += 2
-		#
+		ws.write(0, cnt, 'Total', styleB)
+	
 		# ------Second row
 		for j in range(nBnds):
 			if j == 0:
@@ -63,10 +64,12 @@ def main():
 			else:	
 				ws.write(1, 2*j + 3, 'Value', styleB)
 				ws.write(1, 2*j + 4, 'Gap (%)', styleB)
-		#
+		#ws.write(1, 2*nBnds + 3, 'Value', styleB)
+
 		# ------ Subsequent rows
 		for i in range(nProbs):
 			line = f.readline().split()
+			prob = float(line[0])
 			ws.write(i+2, 0, float(line[0]), styleN) 
 			for j in range(nBnds):
 				line = f.readline().split()
@@ -84,33 +87,18 @@ def main():
 					gap   = 100*(valUB - valLB)/valLB
 					ws.write(i+2, 2*j + 3, '%.2f' % valUB, styleN)
 					ws.write(i+2, 2*j + 4, '%.2f' % gap, styleN)
-			'''
-			for j in xrange(m):
-				if j > 0:
-					ws.write(i+2, j + 1, '%.2f' % utils[i][j], styleN)
-					ws.write(i+2, m + 2*j, '%.1f' %  vals[i][j], styleN)
-					gap = 100*(vals[i][j] - vals[i][0])/vals[i][0]
-					ws.write(i+2, m + 2*j + 1, '%.1f' % gap, styleN)
-				else:
-					ws.write(i+2, j + 1, '%.2f' % utils[i][j], styleN)
-					ws.write(i+2, m + 1 + 2*j, '%.1f' %  vals[i][j], styleN)
-			'''
-		# End interlude
-		#############################################
+
+			ws.write(i+2, 2*nBnds + 3, '%.1f' % (1440*prob), styleN)
+
+		# ------ Formatting: 8.5 x 11, Landscape, fit to page
+		ws.paper_size_code = 1
+		ws.portrait        = False
+		ws.fit_num_pages   = 1
 		
-		'''
-		for i in xrange(nProbs):
-			line = f.readline().split()
-			probs[i] = float(line[0])
-			for j in xrange(nBnds):
-				line        = f.readline().split()
-				vals[i][j]  = float(line[0])
-		'''
+		# End interlude
+		#############################################		
 	w.save(xlsPath)
 
-	'''
-
-	'''
 
 if __name__ == '__main__':
 	main()
