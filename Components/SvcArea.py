@@ -1,9 +1,10 @@
 import numpy as np
 
 class SvcArea():
-	def __init__(self, nodes, bases, Tunit, Tresp):
+	def __init__(self, nodes, bases, Tunit, Tresp, clst=False):
 		# Tunit : Time needed (min.) to travel one unit in the network
 		# Tresp : Response time threshold
+		# clst  : If True, groups bases into clusters (see L and clst)
 		self.nodes = nodes
 		self.bases = bases
 		self.A     = sum([bases[j]['ambs'] for j in bases])
@@ -13,6 +14,9 @@ class SvcArea():
 		self.__buildB()
 		self.__buildNBdist()
 		self.__buildR()
+		if clst:
+			self.__buildL()
+			self.__buildClst()
 				
 	def __buildDist(self):
 		# Build distance matrix between nodes (rows) and bases (columns)
@@ -48,6 +52,22 @@ class SvcArea():
 		#	distance from i, so just need to get first element of B[i]
 		self.__NBdist = [self.dist[i][self.__BA[i][0]] for i in self.nodes]
 
+	def __buildL(self):
+		# L[j] = The cluster to which base j belongs (if applicable)
+		self.L = np.zeros(len(self.bases), dtype = 'int64')
+		for j in self.bases:
+			self.L[j] = self.bases[j]['clst']
+
+	def __buildClst(self):
+		# clst[l] = The set of bases belonging to cluster l
+		self.clst = {}
+		for j in self.bases:
+			l = self.L[j]
+			if l in self.clst:
+				self.clst[l].append(j)
+			else:
+				self.clst[l] = [j]
+
 	def distance(self, x, y):
 		# Outputs Manhattan travel time (min.) between two pts in the network 
 		return (abs(x[0] - y[0]) + abs(x[1] - y[1]))*self.Tunit
@@ -76,3 +96,9 @@ class SvcArea():
 	
 	def getR(self):
 		return self.__R   
+	
+	def getL(self):
+		return self.L
+	
+	def getClst(self):
+		return self.clst

@@ -3,16 +3,16 @@ from ....Methods.network import writeNetwork, heatmap, bivariateNormalIntegral a
 
 # Network file location
 basePath    = dirname(realpath(__file__))
-networkFile = "four.txt"
-heatFile	= "fourheat.pdf"
+networkFile = "eight.txt"
+heatFile	= "eightheat.pdf"
 networkPath = join(basePath, networkFile)
 heatPath    = join(basePath, heatFile)
 
 # Size of grid, response time threshold
 sizeX = 9 
 sizeY = 9
-Tresp = 4
-Tunit = 1.0
+Tresp = 9 
+Tunit = 2.25
 grid  = 1.0
 
 # Nodes: center of each cell in 9x9 grid
@@ -24,11 +24,14 @@ for i in range(sizeX):
 		count += 1
 
 # Base locations
+# "cluster" used in time-base penalty multipliers, when
+#	we want to set the multipliers for bases in the same
+#	cluster equal to one another
 bases    = {}
-bases[0] = {'loc': (2.5, 2.5), 'ambs': 1, 'clst': 0}
-bases[1] = {'loc': (2.5, 6.5), 'ambs': 1, 'clst': 0}
-bases[2] = {'loc': (6.5, 2.5), 'ambs': 1, 'clst': 0}
-bases[3] = {'loc': (6.5, 6.5), 'ambs': 1, 'clst': 0}
+bases[0] = {'loc': (2.5, 2.5), 'ambs': 2, 'clst': 0}
+bases[1] = {'loc': (2.5, 6.5), 'ambs': 2, 'clst': 1}
+bases[2] = {'loc': (6.5, 2.5), 'ambs': 2, 'clst': 1}
+bases[3] = {'loc': (6.5, 6.5), 'ambs': 2, 'clst': 0}
 
 # Peaks
 sz = [1, 1, 1, 1]

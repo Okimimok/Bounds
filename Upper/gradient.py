@@ -80,6 +80,7 @@ def fullSearch(svca, astr, sdist, penalty, IP, settings, N, randSeed,\
 		m.solve(settings)
 		obj   += m.getObjective()/N
 		nabla += m.estimateGradient()/N													
+	#print(nabla[::10])
 
 	for i in range(iters):
 		if debug: print('Line Search, Iteration %i' % (i+1))

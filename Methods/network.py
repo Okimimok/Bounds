@@ -15,11 +15,20 @@ def writeNetwork(networkPath, nodes, bases, Tunit, Tresp):
 		for i in range(nNodes):
 			loc = nodes[i]['loc']
 			f.write('%i %.2f %.2f %.6f\n' % (i, loc[0], loc[1], nodes[i]['prob']))
-
-		f.write('#Bases: x y NumAmbs\n')
-		for j in range(nBases):
-			loc = bases[j]['loc']
-			f.write('%i %.2f %.2f %i\n' % (j, loc[0], loc[1], bases[j]['ambs']))
+		
+		# If bases not marked with a cluster number, set to -1, a null value
+		f.write('#Bases: x y NumAmbs Cluster\n')
+		if 'clst' in bases[0]:
+			for j in range(nBases):
+				loc  = bases[j]['loc']
+				ambs = bases[j]['ambs']
+				clst = bases[j]['clst']
+				f.write('%i %.2f %.2f %i %i\n' % (j, loc[0], loc[1], ambs, clst))
+		else:
+			for j in range(nBases):
+				loc  = bases[j]['loc']
+				ambs = bases[j]['ambs']
+				f.write('%i %.2f %.2f %i %i\n' % (j, loc[0], loc[1], ambs, -1))
 
 def readNetwork(networkPath):
 	# Given data about a service area stored in a text file (containing info)
@@ -32,6 +41,7 @@ def readNetwork(networkPath):
 	nodes = {}
 	
 	with open(networkPath, 'r') as f:
+		# Determining if bases are marked with clusters:
 		tmp    = f.readline()
 		line   = f.readline().split()
 		nNodes = int(line[0])
@@ -54,8 +64,12 @@ def readNetwork(networkPath):
 			bases[j]         = {}
 			bases[j]['loc']  = (float(line[1]), float(line[2]))
 			bases[j]['ambs'] = int(line[3])
+			bases[j]['clst'] = int(line[4])
 
-	return SvcArea(nodes, bases, Tunit, Tresp)
+	# Have bases been clustered?
+	clst = (bases[0]['clst'] != -1)
+
+	return SvcArea(nodes, bases, Tunit, Tresp, clst)
 
 
 def heatmap(mapPath, sizeX, sizeY, grid, nodes, bases, minorAx=-1, majorAx=-1):

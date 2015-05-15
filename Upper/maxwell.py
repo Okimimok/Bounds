@@ -31,7 +31,7 @@ def buildEta(svcArea, arrStream, svcDist, filePath, debug=False):
 				p.solve(settings)
 				# Preserving monotonicity
 				if r > 0:
-					eta[r][a] = max(p.getObjective(), eta[r][a-1], eta[r-1][a])
+					eta[r][a] = abs(max(p.getObjective(), eta[r][a-1], eta[r-1][a]))
 	
 			if debug: print('r : %i of %i, a : %i of %i, Obj = %.4f' %\
 							(r, maxR, a, maxA, eta[r][a]))
