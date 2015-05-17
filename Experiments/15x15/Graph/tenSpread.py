@@ -25,31 +25,31 @@ for i in range(sizeX):
 
 # Base locations		
 bases = {}
-bases[0]  = {'loc': ( 1.5, 13.5), 'ambs': 1}
-bases[1]  = {'loc': ( 4.5, 13.5), 'ambs': 0}
-bases[2]  = {'loc': ( 7.5, 13.5), 'ambs': 1}
-bases[3]  = {'loc': (10.5, 13.5), 'ambs': 0}
-bases[4]  = {'loc': (13.5, 13.5), 'ambs': 0}
-bases[5]  = {'loc': ( 1.5, 10.5), 'ambs': 0}
-bases[6]  = {'loc': ( 4.5, 10.5), 'ambs': 0}
-bases[7]  = {'loc': ( 7.5, 10.5), 'ambs': 1}
-bases[8]  = {'loc': (10.5, 10.5), 'ambs': 0}
-bases[9]  = {'loc': (13.5, 10.5), 'ambs': 0}
-bases[10] = {'loc': ( 1.5,  7.5), 'ambs': 1}
-bases[11] = {'loc': ( 4.5,  7.5), 'ambs': 1}
-bases[12] = {'loc': ( 7.5,  7.5), 'ambs': 1}
-bases[13] = {'loc': (10.5,  7.5), 'ambs': 1}
-bases[14] = {'loc': (13.5,  7.5), 'ambs': 1}
-bases[15] = {'loc': ( 1.5,  4.5), 'ambs': 0}
-bases[16] = {'loc': ( 4.5,  4.5), 'ambs': 0}
-bases[17] = {'loc': ( 7.5,  4.5), 'ambs': 1}
-bases[18] = {'loc': (10.5,  4.5), 'ambs': 0}
-bases[19] = {'loc': (13.5,  4.5), 'ambs': 0}
-bases[20] = {'loc': ( 1.5,  1.5), 'ambs': 0}
-bases[21] = {'loc': ( 4.5,  1.5), 'ambs': 0}
-bases[22] = {'loc': ( 7.5,  1.5), 'ambs': 1}
-bases[23] = {'loc': (10.5,  1.5), 'ambs': 0}
-bases[24] = {'loc': (13.5,  1.5), 'ambs': 0}
+bases[0]  = {'loc': ( 1.5, 13.5), 'ambs': 1, 'clst': 0}
+bases[1]  = {'loc': ( 4.5, 13.5), 'ambs': 0, 'clst': 1}
+bases[2]  = {'loc': ( 7.5, 13.5), 'ambs': 1, 'clst': 2}
+bases[3]  = {'loc': (10.5, 13.5), 'ambs': 0, 'clst': 1}
+bases[4]  = {'loc': (13.5, 13.5), 'ambs': 0, 'clst': 0}
+bases[5]  = {'loc': ( 1.5, 10.5), 'ambs': 0, 'clst': 1}
+bases[6]  = {'loc': ( 4.5, 10.5), 'ambs': 0, 'clst': 3}
+bases[7]  = {'loc': ( 7.5, 10.5), 'ambs': 1, 'clst': 4}
+bases[8]  = {'loc': (10.5, 10.5), 'ambs': 0, 'clst': 3}
+bases[9]  = {'loc': (13.5, 10.5), 'ambs': 0, 'clst': 1}
+bases[10] = {'loc': ( 1.5,  7.5), 'ambs': 1, 'clst': 2}
+bases[11] = {'loc': ( 4.5,  7.5), 'ambs': 1, 'clst': 4}
+bases[12] = {'loc': ( 7.5,  7.5), 'ambs': 1, 'clst': 5}
+bases[13] = {'loc': (10.5,  7.5), 'ambs': 1, 'clst': 4}
+bases[14] = {'loc': (13.5,  7.5), 'ambs': 1, 'clst': 2}
+bases[15] = {'loc': ( 1.5,  4.5), 'ambs': 0, 'clst': 1}
+bases[16] = {'loc': ( 4.5,  4.5), 'ambs': 0, 'clst': 3}
+bases[17] = {'loc': ( 7.5,  4.5), 'ambs': 1, 'clst': 4}
+bases[18] = {'loc': (10.5,  4.5), 'ambs': 0, 'clst': 3}
+bases[19] = {'loc': (13.5,  4.5), 'ambs': 0, 'clst': 1}
+bases[20] = {'loc': ( 1.5,  1.5), 'ambs': 0, 'clst': 0}
+bases[21] = {'loc': ( 4.5,  1.5), 'ambs': 0, 'clst': 1}
+bases[22] = {'loc': ( 7.5,  1.5), 'ambs': 1, 'clst': 2}
+bases[23] = {'loc': (10.5,  1.5), 'ambs': 0, 'clst': 1}
+bases[24] = {'loc': (13.5,  1.5), 'ambs': 0, 'clst': 0}
 
 # Peaks
 sz = [32, 1.5, 1.5, 1.5, 1.5, 1, 1, 1, 1]
