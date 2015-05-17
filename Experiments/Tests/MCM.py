@@ -7,7 +7,7 @@ from ...Methods.sample import confInt
 from ...Components.ArrStream import ArrStream
 from ...Components.SamplePath import SamplePath
 from ...Components.SvcDist import SvcDist
-from ...Models import PIP
+from ...Models import PIP, LPIP
 
 def main():
 	basePath   = dirname(realpath(__file__))
@@ -27,6 +27,7 @@ def main():
 	T        = cp['inputs'].getint('T')
 	N        = cp['inputs'].getint('N')
 	prob     = cp['inputs'].getfloat('prob')
+	LPrelax  = cp['inputs'].getboolean('LPrelax')
 	gamma    = eval(cp['inputs']['gamma'])
 	
 	# Service distribution
@@ -54,8 +55,12 @@ def main():
 	for k in range(N):
 		if (k+1)% freq == 0: print('Iteration %i' % (k+1))
 	
-		omega	  = SamplePath(svca, astr, sdist)
-		p		  = PIP.ModelInstance(svca, astr, omega, gamma)
+		omega = SamplePath(svca, astr, sdist)
+		if LPrelax:
+			p = LPIP.ModelInstance(svca, astr, omega, gamma)
+		else:
+			p = PIP.ModelInstance(svca, astr, omega, gamma)
+
 		p.solve(settings)
 		ubObj[k]  = p.getObjective()
 

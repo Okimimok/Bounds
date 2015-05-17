@@ -41,14 +41,14 @@ class ModelInstance:
 			for j in self.B[self.calls[t]['loc']]:
 				x[t][j] = {}
 				for k in self.bases:
-					x[t][j][k] = self.m.addVar(lb=0, ub=1, obj=1, vtype=GRB.BINARY)
+					x[t][j][k] = self.m.addVar(lb=0, ub=1, obj=1)
 	
 		# At time t, the number of idle ambulances at base j
 		y = {}
 		for t in range(1, self.T+1):
 			y[t] = {}
 			for j in self.bases:
-				y[t][j] = self.m.addVar(lb=0, ub=self.A, vtype=GRB.INTEGER)
+				y[t][j] = self.m.addVar(lb=0, ub=self.A)
 			
 		self.m.update()
 
@@ -56,10 +56,10 @@ class ModelInstance:
 		v = {}
 		if gamma is not None:
 			for t in self.callTimes:
-				v[t] = self.m.addVar(lb=0, ub=1, obj=-gamma[t], vtype=GRB.BINARY)
+				v[t] = self.m.addVar(lb=0, ub=1, obj=-gamma[t])
 		else:
 			for t in self.callTimes:
-				v[t] = self.m.addVar(lb=0, ub=1, vtype=GRB.BINARY)
+				v[t] = self.m.addVar(lb=0, ub=1)
 
 		# At time t, can system respond to call arriving at node i?
 		w = {}
@@ -67,13 +67,12 @@ class ModelInstance:
 			for t in range(1, self.T+1):
 				w[t] = {}
 				for i in self.nodes:
-					w[t][i] = self.m.addVar(lb=0, ub=1, obj=gamma[t]*self.P[t][i],\
-									   vtype=GRB.BINARY)
+					w[t][i] = self.m.addVar(lb=0, ub=1, obj=gamma[t]*self.P[t][i])
 		else:
 			for t in range(1, self.T+1):
 				w[t] = {}
 				for i in self.nodes:
-					w[t][i] = self.m.addVar(lb=0, ub=1, vtype=GRB.BINARY)
+					w[t][i] = self.m.addVar(lb=0, ub=1)
 				
 		self.m.update()	
 
@@ -198,7 +197,6 @@ class ModelInstance:
 
 		self.m.modelSense = GRB.MAXIMIZE
 		self.m.optimize()
-		self.m.fixed()
 
 	def getModel(self):
 		return self.m

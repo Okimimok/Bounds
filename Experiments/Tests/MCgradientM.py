@@ -8,7 +8,7 @@ from ...Components.SvcDist import SvcDist
 from ...Components.ArrStream import ArrStream
 from ...Components.CvgPenalty import CvgPenalty
 from ...Upper.gradient import fullSearch, solvePIPs
-from ...Models import PIP2
+from ...Models import LPIP, PIP
 
 def main():
 	basePath   = dirname(realpath(__file__))
@@ -31,21 +31,13 @@ def main():
 	N     = cp['inputs'].getint('N')
 	prob  = cp['inputs'].getfloat('prob')
 	iters = cp['inputs'].getint('iters')
+
+	# Are we solving the LP relaxation instead?
+	LPrelax = cp['inputs'].getboolean('LPrelax')
 	
-	# Warm-starting the gradient search?
-	try:
-		warm = cp['inputs'].getboolean('warm')
-	except:
-		warm = False
-	
-	if warm:
-		inGammaFile = cp['files']['inGammaFile']
-		inGammaPath = abspath(join(abspath(join(basePath, "..//")), inGammaFile))
-		penalty     = CvgPenalty(gammaPath=inGammaPath)
-		sd          = seed3
-	else:
-		penalty = CvgPenalty(np.zeros(T+1))
-		sd      = seed1
+	# Coverage penalty
+	penalty = CvgPenalty(np.zeros(T+1))
+	sd      = seed1
 
 	# Step sizes used for gradient search		
 	steps = eval(cp['inputs']['steps'])
@@ -70,13 +62,22 @@ def main():
 	if freq < 0: freq = N+1
 
 	start = time.clock()
-	fullSearch(svca, astr, sdist, penalty, PIP2, settings, N, sd, iters,\
+	if LPrelax:
+		fullSearch(svca, astr, sdist, penalty, LPIP, settings, N, sd, iters,\
 							 freq=freq, debug=debug)
+	else:
+		fullSearch(svca, astr, sdist, penalty, PIP, settings, N, sd, iters,\
+							 freq=freq, debug=debug)
+
 	rt    = time.clock() - start
 	print('Search took %.4f seconds' % rt)
 	print('Debiasing...')
 	seed(seed2) 
-	obj, _ = solvePIPs(svca, astr, sdist, penalty.gamma, PIP2, settings, N, freq=freq)
+	if LPrelax:
+		obj, _ = solvePIPs(svca, astr, sdist, penalty.gamma, LPIP, settings, N, freq=freq)
+	else:
+		obj, _ = solvePIPs(svca, astr, sdist, penalty.gamma, PIP, settings, N, freq=freq)
+
 	print('Done in %.3f seconds' % (time.clock() - rt))
 	print('Final upper bound: %.4f +/- %.4f' % confInt(obj))
 
