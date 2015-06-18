@@ -21,6 +21,9 @@ class ModelInstance:
 		self.numCalls  = omega.numCalls
 		self.Q         = omega.getQ()
 
+		# Currently figured to solve LP relaxation of the problem?
+		self.LPrelax   = True
+
 		# Create model object and dictionary of decision vars
 		self.formulate(gamma)
 
@@ -198,11 +201,45 @@ class ModelInstance:
 		self.m.modelSense = GRB.MAXIMIZE
 		self.m.optimize()
 
+		if self.LPrelax == False:
+			self.m.fixed()
+
 	def getModel(self):
 		return self.m
 
 	def getDecisionVars(self):
 		return self.dvars
+
+	def flipVars(self):
+		# If decision variables are continuous, restrict to take on integer values
+		#	(and vice versa)
+		v = self.dvars['v']
+		w = self.dvars['w']
+		x = self.dvars['x']
+		y = self.dvars['y']
+		
+		if self.LPrelax:
+			for t in self.callTimes:
+				v[t].setAttr('VType', 'I')
+				for j in self.B[self.calls[t]['loc']]:
+					y[t][j].setAttr('VType', 'I')
+					for k in self.bases:
+						x[t][j][k].setAttr('VType', 'I')
+				for i in self.nodes:
+					w[t][i].setAttr('VType', 'I')
+			self.LPrelax = False
+		else:
+			for t in self.callTimes:
+				v[t].setAttr('VType', 'C')
+				for j in self.B[self.calls[t]['loc']]:
+					y[t][j].setAttr('VType', 'C')
+					for k in self.bases:
+						x[t][j][k].setAttr('VType', 'C')
+				for i in self.nodes:
+					w[t][i].setAttr('VType', 'C')
+			self.LPrelax = True
+			
+		self.m.update()
 
 	def getObjective(self):
 		# If the model has already been solved, return objective associated
