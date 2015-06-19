@@ -4,7 +4,7 @@ from ....Methods.network import writeNetwork, heatmap, bivariateNormalIntegral a
 # Network file location
 basePath    = dirname(realpath(__file__))
 networkFile = "tenBall.txt"
-heatFile	= "tenBallheat.pdf"
+heatFile    = "tenBallheat.pdf"
 networkPath = join(basePath, networkFile)
 heatPath    = join(basePath, heatFile)
 
@@ -19,9 +19,9 @@ grid  = 1.0
 nodes = {}
 count = 0
 for i in range(sizeX):
-	for j in range(sizeY):
-		nodes[count] = {'loc': (i + 0.5, j + 0.5), 'prob': 0.0}
-		count += 1
+    for j in range(sizeY):
+        nodes[count] = {'loc': (i + 0.5, j + 0.5), 'prob': 0.0}
+        count += 1
 
 # Base locations		
 bases = {}
