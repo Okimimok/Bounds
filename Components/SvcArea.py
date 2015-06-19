@@ -31,15 +31,25 @@ class SvcArea():
                 self.dist[i][j] = self.distance(nodes[i]['loc'], bases[j]['loc'])
 
     def __buildB(self):
-         # B[i] : bases that can respond to call at i within threshold,
-         #                      sorted in order of distance from i        
-         # BA[i] : same for all bases, not just those within reach of i
-         self.__B  = {}
-         self.__BA = {}
-         for i in self.nodes:
-             temp = sorted([(self.dist[i][j], j) for j in self.bases]) 
-             self.__BA[i] = [k[1] for k in temp]
-             self.__B[i]  = [k[1] for k in temp if k[0] <= self.Tresp]
+        # B[i] : bases that can respond to call at i within threshold,
+        #                      sorted in order of distance from i        
+        # BA[i] : same for all bases, not just those within reach of i
+        self.__B  = {}
+        self.__BA = {}
+        if self.Tresp > 0:
+            for i in self.nodes:
+                temp = sorted([(self.dist[i][j], j) for j in self.bases]) 
+                self.__BA[i] = [k[1] for k in temp]
+                self.__B[i]  = [k[1] for k in temp if k[0] <= self.Tresp]
+        else:
+            # Special case, for debugging. Set Tresp to <= 0 only if response
+            #   from arriving call's node would be considered timely
+            # First element of each dictionary should be the node itself
+            for i in self.nodes:
+                self.__BA[i] = [i]
+                self.__B[i]  = [i]
+                temp = sorted([(self.dist[i][j], j) for j in self.bases if j != i]) 
+                self.__BA[i] += [k[1] for k in temp]
                                                                  
     def __buildR(self):
         # R[j] = Set of demand nodes to which base j response possible

@@ -23,17 +23,18 @@ def simulate(svcDists, omega, A, v = None, debug = False):
     else:
         state['v'] = np.ones(A+1)
                         
+    # Summary statistics
     stats         = {}
-    stats['obj']  = 0.0
     stats['call'] = 0
+    stats['obj']  = 0.0
     stats['miss'] = 0
     stats['busy'] = 0.0
     stats['util'] = 0.0
-    c = 0
           
     # Initialize FEL w/ first event (first arrival) and last event (end)
     # Arrivals have priority 1. End event has priority -1 (happens first at T+1). 
-    T   = omega.T
+    T = omega.T
+    c = 0
     fel = FutureEventsList()
     fel.addEvent(T+1, 'end', priority=-1)
     if len(calls) > 0: fel.addEvent(times[0], 'arrival', priority=1)

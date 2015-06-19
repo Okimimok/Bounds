@@ -36,6 +36,7 @@ def buildEta(svcArea, arrStream, svcDist, filePath, debug=False):
             if debug: print('r : %i of %i, a : %i of %i, Obj = %.4f' %\
                                                         (r, maxR, a, maxA, eta[r][a]))
         eta[r][0] = eta[r][1]
+
     return eta
 
 def buildV(svcArea, arrStream, settings=None): 

@@ -42,7 +42,7 @@ def simulate(svca, omega, executeService, q=0.5, debug=False, eta=0):
     c   = 0
     fel = FutureEventsList()
     fel.addEvent(T+1, 'end', priority=-1)
-    if len(calls) > 0: fel.addEvent(times[c], 'arrival', (locs[c], svcs[c]), 1)
+    if len(calls) > 0: fel.addEvent(times[0], 'arrival', (locs[0], svcs[0]), 1)
                 
     while state['t'] <= T:
         # Find next event, update cumulative busy time, advance clock
