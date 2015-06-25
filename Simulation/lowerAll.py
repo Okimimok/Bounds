@@ -140,7 +140,7 @@ def executeArrival(state, stats, callInfo, fel, svca):
                 if debug: print('Ambulance arrives late')
 
             finishTime = int(ceil(arrivalTime + svc))
-            fel.addEvent(finishTime, 'service', loc)
+            fel.addEvent(finishTime, 'service', (loc, j))
             if debug:
                 print('Service time %i, call finishes at %i' % (svc, finishTime))
                 print('%i call(s) served in time, %i late' % (stats['obj'], stats['late']))

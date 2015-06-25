@@ -5,14 +5,16 @@ from os.path import abspath, dirname, realpath, join
 from ...Methods.network import readNetwork      
 from ...Methods.sample import confInt
 from ...Components.ArrStream import ArrStream
-from ...Components.SamplePath import SamplePath
+from ...Components.SamplePath2 import SamplePath2
 from ...Components.SvcDist import SvcDist
-from ...Models import PIP2
+from ...Models import PIP2, PIPR
+import pdb
+
+# For testing the alterative formulation of the perfect info IP
+#   (with separate vars for dispatching and redeployment decisions)
 
 def main():
     basePath   = dirname(realpath(__file__))
-    # Jump back a directory from current file. 
-    # Command line argument should be of the form ExpType/Config/<ini file>
     configPath = abspath(join(abspath(join(basePath, "..//")), sys.argv[1]))
     cp         = configparser.ConfigParser()
     cp.read(configPath)
@@ -46,23 +48,27 @@ def main():
     if freq < 0: freq = N+1
 
     # Monte Carlo Simulation
-    ubObj  = np.zeros(N)
-    ubUtil = np.zeros(N)
+    orgObj = np.zeros(N)
+    revObj = np.zeros(N)
         
     seed(randSeed)
     start = time.clock()
     for k in range(N):
         if (k+1)% freq == 0: print('Iteration %i' % (k+1))
         
-        omega  = SamplePath(svca, astr, sdist)
-        p      = PIP2.ModelInstance(svca, astr, omega)
-        p.solve(settings)
-        ubObj[k]  = p.getObjective()
-        ubUtil[k] = p.estimateUtilization()     
+        omega = SamplePath2(svca, astr, sdist)
+        p1    = PIP2.ModelInstance(svca, astr, omega)
+        p2    = PIPR.ModelInstance(svca, astr, omega)
+        p1.solve(settings)
+        p2.solve(settings)
+
+        orgObj[k]  = p1.getObjective()
+        revObj[k]  = p2.getObjective()
 
     rt = time.clock() - start
-    print('Objective   : %.3f +/- %.3f' % confInt(ubObj))
-    print('Runtime     : %.3f sec (%.3f per iter)' % (rt, rt/N))
+    print('Org. Objective : %.3f +/- %.3f' % confInt(orgObj))
+    print('Rev. Objective : %.3f +/- %.3f' % confInt(revObj))
+    pdb.set_trace()
                                 
 if __name__ == '__main__':
     main()

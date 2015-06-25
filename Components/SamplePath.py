@@ -27,7 +27,7 @@ class SamplePath():
                 
             if callLoc != 'null':
                 r = random()
-                self.calls[t]            = {}
+                self.calls[t]        = {}
                 self.calls[t]['loc'] = callLoc
                 self.calls[t]['rnd'] = r
                                 

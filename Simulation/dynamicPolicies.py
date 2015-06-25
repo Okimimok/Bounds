@@ -1,8 +1,7 @@
-from math import ceil
 import numpy as np
 
 # An assortment of dynamic policies
-def daskinRedeploy(state, location, fel, svca):
+def daskinRedeploy(state, locData, fel, svca):
     # Makes redeployment decisions based upon marginal increase in 
     #       objective to Daskin's MEXCL
     # eta weights various redeployment decisions by travel distance.
@@ -13,12 +12,17 @@ def daskinRedeploy(state, location, fel, svca):
     # q denotes a systemwide busy probability. Default value chosen
     #       for now, but could be replaced with more accurate measure of
     #       system utilization later.
+    #
+    # locData is a tuple of length 2.
+    # locData[0] : Location of ambulance call completion
+    # locData[1] : Base from which responding ambulance was dispatched
 
-    nodes = svca.nodes
-    bases = svca.bases
-    R     = svca.getR()
-    q     = state['q']
-    eta   = state['eta']
+    nodes    = svca.nodes
+    bases    = svca.bases
+    R        = svca.getR()
+    q        = state['q']
+    eta      = state['eta']
+    location = locData[0]
         
     # Locations of ambulances that are idle, being redeployed
     redp = [i[2] for i in fel.searchEvents('redeployment')]
@@ -52,7 +56,7 @@ def daskinRedeploy(state, location, fel, svca):
             bestDelta = num/denom
             bestBase  = j
         
-    finish = int(ceil(state['t'] + svca.dist[location][bestBase]))
+    finish = state['t'] + svca.dist[location][bestBase]
     fel.addEvent(finish, 'redeployment', bestBase)
 
     if state['debug']:
@@ -60,12 +64,13 @@ def daskinRedeploy(state, location, fel, svca):
         print('To be redeployed to base %s' % str(svca.bases[bestBase]['loc']))
         print('Redeployment completes at time %i' % finish)
 
-def nearestEffEmpty(simState, location, fel, svca):
+def nearestEffEmpty(simState, locData, fel, svca):
     # Redeploy ambulance to nearest empty base (disregrading redeployments
     #   to that base). 
-    dist  = svca.getDist()
-    nodes = svca.getNodes()
-    bases = svca.getBases()
+    dist     = svca.getDist()
+    nodes    = svca.getNodes()
+    bases    = svca.getBases()
+    location = locData[0]
                             
     # Number of ambulances being redeployed to each base
     results = fel.searchEvents('redeployment')

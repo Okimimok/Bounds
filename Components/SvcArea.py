@@ -10,6 +10,7 @@ class SvcArea():
         self.A     = sum([bases[j]['ambs'] for j in bases])
         self.Tunit = Tunit
         self.Tresp = Tresp
+        self.probs = [nodes[i]['prob'] for i in nodes]
         self.__buildDist()
         self.__buildB()
         self.__buildNBdist()
