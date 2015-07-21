@@ -7,8 +7,11 @@ from ...Methods.sample import confInt
 from ...Components.SvcDist import SvcDist
 from ...Components.ArrStream import ArrStream
 from ...Components.CvgPenalty import CvgPenalty
-from ...Upper.gradient import fullSearch, solvePIPs
-from ...Models import PIP2, PIP3, PIPR
+from ...Upper.gradient2 import fullSearch, solvePIPs
+from ...Models import PIP2, PIP3, PIP4, PIP5, PIPR
+
+# Test code. Gradient search on "revised" PIPs where definition of coverage 
+#   is modified to include ambulances en route to a base. 
 
 def main():
     basePath   = dirname(realpath(__file__))
@@ -36,13 +39,8 @@ def main():
     N     = cp['inputs'].getint('N')
     prob  = cp['inputs'].getfloat('prob')
     iters = cp['inputs'].getint('iters')
+    name  = cp['inputs']['name']
 
-    # Are we running PIP2 or PIPR?
-    try:
-        revised = cp['inputs'].getboolean('revised')
-    except:
-        revised = False
-        
     # Step sizes used for gradient search           
     penalty = CvgPenalty(np.zeros(T+1))
     steps   = eval(cp['inputs']['steps'])
@@ -67,12 +65,32 @@ def main():
     if freq < 0: freq = N+1
 
     start = time.clock()
-    fullSearch(svca, astr, sdist, penalty, PIP2, stngs, N, seed1, iters, freq, debug)
+    if name == 'two':
+        fullSearch(svca, astr, sdist, penalty, PIP2, stngs, N, seed1, iters, freq, debug)
+    elif name == 'three':
+        fullSearch(svca, astr, sdist, penalty, PIP3, stngs, N, seed1, iters, freq, debug)
+    elif name == 'four':
+        fullSearch(svca, astr, sdist, penalty, PIP4, stngs, N, seed1, iters, freq, debug)
+    elif name == 'five':
+        fullSearch(svca, astr, sdist, penalty, PIP5, stngs, N, seed1, iters, freq, debug)
+    elif name == 'revised':
+        fullSearch(svca, astr, sdist, penalty, PIPR, stngs, N, seed1, iters, freq, debug)
 
     rt    = time.clock() - start
     print('Search took %.4f seconds' % rt)
     print('Debiasing...')
-    obj, _ = solvePIPs(svca, astr, sdist, penalty.gamma, PIP2, stngs, N, freq=freq)
+    seed(seed2) 
+    if name == 'two':
+        obj, _ = solvePIPs(svca, astr, sdist, penalty.gamma, PIP2, stngs, N, freq=freq)
+    elif name == 'three':
+        obj, _ = solvePIPs(svca, astr, sdist, penalty.gamma, PIP3, stngs, N, freq=freq)
+    elif name == 'four':
+        obj, _ = solvePIPs(svca, astr, sdist, penalty.gamma, PIP4, stngs, N, freq=freq)
+    elif name == 'five':
+        obj, _ = solvePIPs(svca, astr, sdist, penalty.gamma, PIP5, stngs, N, freq=freq)
+    elif name == 'revised':
+        obj, _ = solvePIPs(svca, astr, sdist, penalty.gamma, PIPR, stngs, N, freq=freq)
+
     print('Done in %.3f seconds' % (time.clock() - rt))
     print('Final upper bound: %.4f +/- %.4f' % confInt(obj))
 

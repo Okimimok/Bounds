@@ -1,0 +1,12 @@
+#NumNodes NumBases UnitTravelTime RespThreshold
+4 4 1.000000 4.000000
+#DemandNodes: x y
+0 0.00 0.00 0.300000
+1 0.00 3.00 0.200000
+2 3.00 0.00 0.200000
+3 3.00 3.00 0.300000
+#Bases: x y NumAmbs Cluster
+0 0.00 0.00 1 -1
+1 0.00 3.00 0 -1
+2 3.00 0.00 0 -1
+3 3.00 3.00 1 -1

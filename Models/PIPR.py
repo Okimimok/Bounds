@@ -12,11 +12,13 @@ class ModelInstance:
         self.A         = svca.A 
         self.B         = svca.getB()
         self.P         = astr.getP()
+        self.RP        = astr.getRP()
         self.T         = omega.T
         self.calls     = omega.getCalls()
         self.callTimes = omega.callTimes
         self.numCalls  = omega.numCalls
         self.QD        = omega.getQD()
+        self.QE        = omega.getQE()
         self.QR        = omega.getQR()
 
         # Create model object and dictionary of decision vars
@@ -48,6 +50,23 @@ class ModelInstance:
         yR = {}
         for (t, i) in self.QD:
             yR[(t, i)] = self.m.addVar(lb=0, ub=self.A, vtype=GRB.INTEGER)
+        
+        # At time t, the number of ambulances available at or en route to base j
+        #   Use only if there is a penalty
+        z = {}
+        if gamma is not None:
+            for t in range(1, self.T+1):
+                for j in self.bases:
+                    if t in self.calls and j in self.B[self.calls[t]['loc']]:
+                        z[(t, j)] = self.m.addVar(lb=0, ub=self.A, vtype=GRB.INTEGER,\
+                                        obj = gamma[t]*(self.RP[t][j] - 1))
+                    else:
+                        z[(t, j)] = self.m.addVar(lb=0, ub=self.A, vtype=GRB.INTEGER,\
+                                        obj = gamma[t]*self.RP[t][j])
+        else:
+            for t in range(1, self.T+1):
+                for j in self.bases:
+                    z[(t, j)] = self.m.addVar(lb=0, ub=self.A, vtype=GRB.INTEGER)
 
         self.m.update()
 
@@ -102,8 +121,29 @@ class ModelInstance:
             for j in self.bases:
                 expr.add(xR[(t, i, j)], 1)
             self.m.addConstr(expr <= yR[(t, i)])
+
+        # Linking z with xR and yD
+        for t in range(1, self.T+1):
+            for j in self.bases:
+                expr = LinExpr(1, yD[(t, j)])
+                for (s, i) in self.QE[(t, j)]:
+                    expr.add(xR[(s, i, j)], 1)
+                self.m.addConstr(expr == z[(t, j)])
                 
-        self.dvars = {'xD': xD, 'xR': xR, 'yD': yD, 'yR': yR}
+        self.dvars = {'xD': xD, 'xR': xR, 'yD': yD, 'yR': yR, 'z': z}
+        self.m.update()
+
+    def updateObjective(self, gamma):
+        # Updates the objective function coefficients for the z-variables
+        z = self.dvars['z']
+
+        for t in range(1, self.T+1):
+           for j in self.bases:
+                if t in self.calls and j in self.B[self.calls[t]['loc']]:
+                    z[(t, j)].setAttr("obj", gamma[t]*(self.RP[t][j]-1))
+                else:
+                    z[(t, j)].setAttr("obj", gamma[t]*self.RP[t][j])
+                                                
         self.m.update()
 
     def solve(self, settings={}):   
@@ -127,3 +167,17 @@ class ModelInstance:
 
     def getObjective(self):
         return self.m.objVal
+
+    def estimateGradient(self):
+        # Given an already solved instance of this IP model, returns the gradient
+        #   estimate arising from this solution.
+        z = self.dvars['z']
+
+        gradSample = np.zeros(self.T+1)
+        for t in range(1, self.T+1):
+            for j in self.bases:
+                gradSample[t] += z[(t, j)].x*self.RP[t][j]
+                if t in self.calls and j in self.B[self.calls[t]['loc']]:
+                    gradSample[t] -= z[(t, j)].x
+
+        return gradSample

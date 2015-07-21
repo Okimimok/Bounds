@@ -4,62 +4,6 @@ from random import seed
 
 # Methods that can be used to perform a gradient search with respect
 #       to the penalty parameters gamma (gamma_t, gamma_tj)
-# Faster gradient search, that stores every model created to memory, so that
-#       repeated reformulation not necessary. Uses ENORMOUS amounts of memory
-def fastSearch(svca, astr, sdist, penalty, IP, stngs, N, randSeed, iters, freq=-1, debug=0):
-    models = {}
-    seed(randSeed)
-
-    # Initialize models, find objective and gradient estimate at starting point
-    obj   = 0
-    gamma = penalty.getGamma()
-    nabla = np.zeros(gamma.shape)
-    print('Initialization...')
-        
-    for j in range(N):
-        omega     = SamplePath2(svca, astr, sdist)
-        models[j] = IP.ModelInstance(svca, astr, omega)
-        models[j].updateObjective(gamma)
-        models[j].solve(stngs)
-        obj   += models[j].getObjective()/N
-        nabla += models[j].estimateGradient()/N
-
-    for i in range(iters):
-        if debug: print('Line search, iteration %i' % (i + 1))
-                
-        # Line search
-        cands    = {}
-        bestStep = 0.0
-        bestVal  = obj
-        bestGrad = np.array(nabla)
-
-        if debug: print('  Step Size 0, Obj. %.4f' % bestVal)
-
-        for step in penalty.getStepSizes():
-            cands[step] = {'val': 0.0, 'grad': np.zeros(gamma.shape)}
-            tmp         = gamma - step*nabla
-            for j in range(N):
-                models[j].updateObjective(tmp)
-                models[j].solve(stngs)
-                cands[step]['val']  += models[j].getObjective()/N
-                cands[step]['grad'] += models[j].estimateGradient()/N
-                        
-                if debug:
-                    print('  Step Size %.3f, Obj. %.4f' % (step, cands[step]['val']))
-                    if cands[step]['val'] < bestVal:
-                        bestStep = step 
-                        bestVal  = cands[step]['val']
-                        bestGrad = cands[step]['grad']
-
-                # If step size is zero, take smaller steps. O/w, update gradient.
-                if bestStep == 0:
-                    penalty.scaleStepSizes(0.5)
-                else:
-                    penalty.updateGamma(-bestStep*nabla)
-                    nabla = np.array(bestGrad)
-                    obj   = bestVal
-
-# Gradient search
 def fullSearch(svca, astr, sdist, penalty, IP, stngs, N, randSeed, iters, freq=-1, debug=0):
     print('Initialization...')
     gamma = penalty.getGamma()
@@ -76,6 +20,8 @@ def fullSearch(svca, astr, sdist, penalty, IP, stngs, N, randSeed, iters, freq=-
         m.solve(stngs)
         obj   += m.getObjective()/N
         nabla += m.estimateGradient()/N
+        for i in range(len(nabla)):
+            nabla[i] = min(nabla[i], 0)
         
     for i in range(iters):
         if debug: print('Line Search, Iteration %i' % (i+1))

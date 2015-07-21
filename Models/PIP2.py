@@ -1,3 +1,4 @@
+from math import log10
 from gurobipy import Model, GRB, LinExpr 
 from ..Methods.sample import binary_search 
 import numpy as np
@@ -132,11 +133,6 @@ class ModelInstance:
         self.v = {'x' : x, 'y' : y}
 
     def updateObjective(self, gamma):
-        # Takes as input:
-        # m     : An already formulated PIP instance (w/ dec vars and constraints)
-        # v     : A dictionary containing its decision varaibles
-        # gamma : Vector of penalty weights 
-        #
         # Updates the objective function coefficients for the y-variables
         y        = self.v['y']
         self.dof = gamma.ndim
@@ -235,7 +231,98 @@ class ModelInstance:
 
         return gradSample
 
-        '''
+    def systemSnapshot(self, outputFile=None):
+        # If IP model has already been solved, prints to terminal (or writes to
+        #   text file, if specified) a snapshot of the system at each time
+        #   a call arrives.
+        # Snapshot specifies the number of ambulances that are idle at each base.
+        #   (with bases able to respond to the call marked with a *)
+
+        # Max number of digits in call times
+        dc = int(log10(self.T)) + 1
+
+        # Number of digits in A
+        da = int(log10(self.A)) + 1
+
+        # Number of bases
+        nb = len(self.bases)
+
+        # Relevant variables
+        y = self.v['y']
+        B = self.B
+
+        for t in self.callTimes:
+            line = 'Time {:{}d}    '.format(t, (dc))
+            loc  = self.calls[t]['loc']
+            for j in range(nb): 
+                ambs = int(y[t][j].x)
+
+                if j in B[loc]:
+                    line += '{:{}d}*    '.format(ambs, da)
+                else:
+                    line += '{:{}d}     '.format(ambs, da)
+                    
+            print (line)
+
+
+    def countDispatches(self):
+        # If IP model has already been solved, finds the number of actual dispatches
+        #   made (separate from passive reward induced by the penalty)
+        x     = self.v['x']
+        B     = self.B
+        disps = 0
+
+        for t in self.callTimes:
+            loc    = self.calls[t]['loc']
+            disps += (sum([x[t][j][k].x for j in B[loc] for k in self.bases]) > 0)
+
+        return disps
+
+
+    def ambProfile(self):
+        # If IP model has already been solved, finds for every number of available
+        #   ambs (from 0 to A) the average number of ambs that are in/out of range.
+        # Unweighted average: every visit to a given state weighted the same.
+        #
+        # Also returns the fraction of time spent in each state
+
+        data = {}
+        y    = self.v['y']
+        nb   = len(self.bases)
+        B    = self.B
+
+        for a in range(self.A+1):
+            data[a] = {'prop': 0.0, 'in': [], 'out': []}
+
+        prevState = self.A
+        prevTime  = 0
+
+        for t in self.callTimes:
+            data[prevState]['prop'] += (t - prevTime)/self.T
+            state = int(sum([y[t][j].x for j in self.bases]))
+
+            prevTime  = t
+            prevState = state
+
+            if state > 0:
+                loc    = self.calls[t]['loc']
+                tmpIn  = 0
+                tmpOut = 0
+                for j in range(nb):
+                    if j in B[loc]:
+                        tmpIn += int(y[t][j].x)
+                    else:
+                        tmpOut += int(y[t][j].x)
+
+                data[state]['in'].append(tmpIn)
+                data[state]['out'].append(tmpOut)
+
+        # Final bit
+        data[state]['prop'] += (self.T - t)/self.T
+        
+        return data 
+
+    '''
         # More compact (and slightly more efficient) implementation of IP constraints
         #   But harder to read and edit!
         cnt = 0
